@@ -9,7 +9,7 @@ export async function SearchDriver(detailesOrders: Order) {
 
       const orderDetailes = {
       orderId: detailesOrders.id,
-      restaurantId: detailesOrders.restaurant.id,
+      restaurantId: detailesOrders.restaurant._id,
       postionsClient: detailesOrders.postionsClient,
       translocation: detailesOrders.translocation,
       timeOrder: detailesOrders.timeOrder,
@@ -32,7 +32,7 @@ export async function SearchDriver(detailesOrders: Order) {
         //console.log(res);
         
         if (res.ok) {
-            const data = await res.json()
+           // const data = await res.json()
             //console.log(data);
             
         }
