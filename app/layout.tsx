@@ -18,6 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Bulek Admin Dashboard",
   description: "لوحة التحكم لإدارة تطبيق Bulek Eats",
+   manifest: "/manifest.json",
    icons: {
     icon: "/favicon.ico",          
     shortcut: "/public/logo.png",  
