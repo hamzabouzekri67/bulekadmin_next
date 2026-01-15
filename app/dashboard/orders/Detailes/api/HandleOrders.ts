@@ -7,7 +7,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL_BACKEND;
 const ACCEPTED_ORDER_PATH = process.env.NEXT_PUBLIC_ACCEPTED_BACKEND
 const REJECT_ORDER_PATH = process.env.NEXT_PUBLIC_REJECT_ORDER
 
-export async function AcceptedOrders(orders: Order, minutes: number, user: User, newOrders: Order[], setNewOrders: (val: Order[]) => void) {
+export async function AcceptedOrders(orders: Order, minutes: number, user: User, newOrders: Order[], setNewOrders: (val: Order[]) => void, secondTime: number) {
     try {
         const url = `${API_URL}${ACCEPTED_ORDER_PATH}`;
         const detailesOrder = {
@@ -20,6 +20,7 @@ export async function AcceptedOrders(orders: Order, minutes: number, user: User,
         "notificationsToken": orders.send.notificationsToken,
         "data": orders,
         'assistedBy': user.id,
+        "timeDriver":secondTime
       };
 
         //console.log(url);

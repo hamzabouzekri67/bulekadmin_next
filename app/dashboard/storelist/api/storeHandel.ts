@@ -3,8 +3,8 @@ import { StoreData } from "@/app/types/store";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 const LIST_STORE=process.env.NEXT_PUBLIC_LIST_STORE
-const UPDATE_STATUS_STORE =process.env.NEXT_PUBLIC_LIST_UPDATE_STATUS_STORE
-const ACCEPTED_STORE_SENT =process.env.NEXT_PUBLIC_LIST_ACCEPTED_STORE_SENT
+const UPDATE_STATUS_STORE =process.env.NEXT_PUBLIC_UPDATE_STATUS_STORE
+const ACCEPTED_STORE_SENT =process.env.NEXT_PUBLIC_ACCEPTED_STORE_SENT
 
 
 export async function GetStoreList(user: User, activeTab: string ,setStoreData: (val: StoreData[]) => void) {

@@ -123,7 +123,9 @@ const OrderDetails = () => {
             </div>
             <div className="flex flex-wrap gap-2">
               <button className="px-3 py-1.5 border rounded-md text-sm w-full sm:w-auto">
-                +{detailesOrders?.restaurant.phoneNumber}
+                <a href={`tel:+${detailesOrders?.restaurant.phoneNumber}`}>
+                  +{detailesOrders?.restaurant.phoneNumber} 
+                </a>
               </button>
             </div>
           </div>
@@ -140,7 +142,9 @@ const OrderDetails = () => {
             </div>
             <div className="flex flex-wrap gap-2">
               <button className="px-3 py-1.5 border rounded-md text-sm w-full sm:w-auto">
-                +{detailesOrders?.send.phoneNumber}
+                 <a href={`tel:+${detailesOrders?.send.phoneNumber}`}>
+                  +{detailesOrders?.send.phoneNumber} 
+                </a>
               </button>
             </div>
           </div>
@@ -151,7 +155,7 @@ const OrderDetails = () => {
               <h3 className="font-bold text-sm md:text-base">Product Rent ({detailesOrders?.listOrder.length})</h3>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left min-w-[500px]">
+              <table className="w-full text-left min-w-125">
                 <thead className="bg-gray-50 text-xs md:text-sm uppercase text-gray-500">
                   <tr>
                     <th className="p-2 md:p-4">Item Details</th>
@@ -208,7 +212,7 @@ const OrderDetails = () => {
         {/* Right Column (Payments) */}
        {/* Right Column (Driver Info) */}
   <div className="space-y-6">
-  <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border-t-4 border-blue-500">
+  <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border-t-4 border-orange-500">
     {currentDriver ? (
             <div className="flex flex-col items-center gap-3 py-6 bg-gray-50 rounded-lg shadow-md border w-full max-w-sm mx-auto">
           

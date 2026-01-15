@@ -18,6 +18,7 @@ export default function Drawer() {
     { href: "/dashboard/orders", label: "Ordres", icon: <List size={20} /> },
     { href: "/dashboard/drivers", label: "Conductrices", icon: <Users size={20} /> },
     { href: "/dashboard/storelist", label: "Magasin de listes", icon: <Home size={20} /> },
+     { href: "/dashboard/offer", label: "Offres d'applications", icon: <Gift size={20} /> },
   ];
 
   

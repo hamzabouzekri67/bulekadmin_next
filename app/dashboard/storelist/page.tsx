@@ -12,7 +12,7 @@ const tabs = [
     { id: 'accepted', label: 'Accepté' },
     { id: 'disabled', label: 'désactivé' },
   ];
-export default function OfferApp(){
+export default function ListStore(){
 
      const { user } = useUser();
      const [activeTab, setActiveTab] = useState('online');

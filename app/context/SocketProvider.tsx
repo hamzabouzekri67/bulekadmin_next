@@ -12,13 +12,13 @@ export default function SocketProvider({ children }: { children: ReactNode }) {
   const { user } = useUser();
 
   useEffect(() => {
-    socketRef.current = io("https://api.bulekeats.com", {
+    socketRef.current = io("http://10.237.24.90:5000", {
       transports: ["websocket"],
       withCredentials: true,
     });
 
     socketRef.current.on("connect", () => {
-      //console.log("🟢 Socket connected بعد refresh ✔");
+      console.log("🟢 Socket connected بعد refresh ✔");
       socketRef.current?.emit('connectedUser', {"userId": user?.id});
       socketRef.current?.emit('joinAdmin', {"role": `admin_${user?.ville.toLowerCase()}`});
       

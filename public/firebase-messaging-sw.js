@@ -28,7 +28,7 @@ messaging.onBackgroundMessage((payload) => {
     const notificationTitle = parsedData.title || "إشعار جديد";
     const notificationOptions = {
     body: parsedData.content || "لديك رسالة جديدة",
-    icon: parsedData.icon || "./vercel.svg",
+    icon: "./logo.png",
     }
 
     //console.log(parsedData);
