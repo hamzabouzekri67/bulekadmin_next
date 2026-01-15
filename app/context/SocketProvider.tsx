@@ -12,7 +12,7 @@ export default function SocketProvider({ children }: { children: ReactNode }) {
   const { user } = useUser();
 
   useEffect(() => {
-    socketRef.current = io("http://10.237.24.90:5000", {
+    socketRef.current = io("https://api.bulekeats.com", {
       transports: ["websocket"],
       withCredentials: true,
     });
