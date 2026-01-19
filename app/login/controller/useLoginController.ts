@@ -45,8 +45,9 @@ export function useLoginController() {
       setError("الرجاء إدخال Email و Password صحيحين");
       return;
     }  
-       const tokenFcm = await getFcmToken()      
-       //console.log(tokenFcm);
+       const tokenFcm = await getFcmToken()   
+  
+      
       
        setIsLoading(true);
       try {
@@ -62,9 +63,7 @@ export function useLoginController() {
          const data = await res.json();
          
          if (data.status === true) {
-           setUser(data.result)    
-           //console.log(data.result);
-                             
+           setUser(data.result)                                 
            router.push("./dashboard")
           return
          }
