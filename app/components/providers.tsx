@@ -11,7 +11,7 @@ export async function getFcmToken() {
 
 
     const permission = await Notification.requestPermission();
-    if (permission !== "granted") return "p";
+    if (permission !== "granted") return permission;
 
     const token = await getToken(messaging, {
       vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
