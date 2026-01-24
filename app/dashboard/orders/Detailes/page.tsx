@@ -7,6 +7,7 @@ import { useState } from "react";
 import { RejectedOrders } from "./api/HandleOrders";
 
 
+
 export default function Detailes() {
 
    const {newOrders , setNewOrders, user} = FetchPendingOrders()
@@ -79,6 +80,23 @@ export default function Detailes() {
     setUnavailableProducts([]);
   };
 
+  const handleOpenGoogleMaps = (order: Order) => {
+  const originLat = order.restaurant.postionsEtabliss.coordinates[1];
+    const originLng = order.restaurant.postionsEtabliss.coordinates[0];
+
+    const destLat = order.postionsClient.coordinates[1];
+    const destLng = order.postionsClient.coordinates[0];
+
+    const navigationLink =
+    `https://www.google.com/maps/dir/?api=1` +
+    `&origin=${originLat},${originLng}` +
+    `&destination=${destLat},${destLng}` +
+    `&travelmode=driving`;
+
+    window.open(navigationLink, "_blank");
+
+};
+
 
   return (
     <div className="p-4">
@@ -101,9 +119,14 @@ export default function Detailes() {
               Order# {index+1}
               </p>
 
-              <p className="text-sm text-gray-500">
-                 12/12/2025 • 08:25 pm
-              </p>
+            <p className="text-sm text-gray-500">
+            {new Intl.DateTimeFormat("fr-FR", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            }).format(new Date(order.timeOrder))}
+            </p>
+
+
 
             </div>
 
@@ -131,9 +154,9 @@ export default function Detailes() {
 
               </div>
 
-              <div className="flex justify-between">
+              <div className="flex justify-between"  onClick={() => handleOpenGoogleMaps(order)}>
                 <p className="text-sm text-gray-500">
-                 Destance
+                 Distance
                 </p>
 
                 <p className="text-sm text-gray-500">
@@ -369,7 +392,7 @@ export default function Detailes() {
                      <h3 className="text-lg font-semibold text-center mb-3">
                      المنتج غير متوفر
                     </h3>
-                    {order.listOrder.map((product,index) => (
+                    {order.listOrder.map((product) => (
                       <label
                         key={product.idproducts}
                         className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-red-50"

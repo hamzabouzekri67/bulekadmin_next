@@ -196,12 +196,10 @@ export default function OrderTimeDialog({ orders, user }: NewOrdersProps) {
           <DialogClose className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">
             إلغاء
           </DialogClose>
-          <button
-            onClick={handleConfirm}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
+
+           <DialogClose onClick={handleConfirm} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
             تأكيد
-          </button>
+          </DialogClose>
         </DialogFooter>
       </DialogContent>
     </Dialog>
