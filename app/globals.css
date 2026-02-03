@@ -187,3 +187,24 @@
 .animate-sheetUp { animation: sheetUp .45s cubic-bezier(.2,.9,.2,1); }
 .animate-itemIn { animation: itemIn .3s ease-out both; }
 .animate-pulseBtn:active { animation: pulseBtn .2s ease-in-out; }
+
+/* globals.css */
+.leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 500px; /* اضمن وجود حد أدنى للارتفاع */
+}
+
+/* تأكد من أن الحاوية التي وضعت فيها الخريطة لا تمنع الظهور */
+.map-wrapper {
+  height: 600px;
+  width: 100%;
+  position: relative;
+}
+
+.leaflet-pane {
+  z-index: 1 !important;
+}
+.leaflet-top, .leaflet-bottom {
+  z-index: 2 !important;
+}

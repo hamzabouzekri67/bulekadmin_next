@@ -26,6 +26,23 @@ export const metadata: Metadata = {
   },
 };
 
+// export default function RootLayout({
+//   children,
+// }: Readonly<{
+//   children: React.ReactNode;
+// }>) {
+//   return (
+//     <html lang="en">
+//       <body className="h-screen overflow-hidden">
+//         {/* <Drawer /> */}
+//         <UserProvider>
+//           {children}
+//         </UserProvider>
+//       </body>
+//     </html>
+//   );
+// }
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -33,8 +50,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="h-screen overflow-hidden">
-        {/* <Drawer /> */}
+      <head>
+        {/* إضافة ملفات التنسيق الأصلية لضمان عمل أيقونات الرسم والخرائط */}
+        <link
+          rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossOrigin=""
+        />
+        <link 
+          rel="stylesheet" 
+          href="https://unpkg.com/leaflet-draw@0.4.12/dist/leaflet.draw.css" 
+        />
+      </head>
+      {/* قمت بإزالة overflow-hidden أو استبداله بـ overflow-auto للسماح بالرسم */}
+      <body className="min-h-screen">
         <UserProvider>
           {children}
         </UserProvider>
@@ -42,3 +72,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+
