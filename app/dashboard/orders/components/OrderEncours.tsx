@@ -49,7 +49,7 @@ export default function OrderEncours({ orderEncours }: NewOrdersProps) {
                  {order.send.firstName}
                 </span>
                  <span className="font-medium text-xs">
-                 {order.restaurant.nameEtabliss}
+                 {order.restaurantId.nameEtabliss}
                 </span>
               </div>
 

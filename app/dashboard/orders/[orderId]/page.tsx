@@ -117,14 +117,14 @@ const OrderDetails = () => {
                 BF
               </div>
               <div>
-                <h3 className="font-semibold">{detailesOrders?.restaurant.nameEtabliss}</h3>
-                <p className="text-xs md:text-sm text-gray-400">{detailesOrders?.restaurant.typeEtabliss}</p>
+                <h3 className="font-semibold">{detailesOrders?.restaurantId.nameEtabliss}</h3>
+                <p className="text-xs md:text-sm text-gray-400">{detailesOrders?.restaurantId.typeEtabliss}</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
               <button className="px-3 py-1.5 border rounded-md text-sm w-full sm:w-auto">
-                <a href={`tel:+${detailesOrders?.restaurant.phoneNumber}`}>
-                  +{detailesOrders?.restaurant.phoneNumber} 
+                <a href={`tel:+${detailesOrders?.restaurantId.phoneNumber}`}>
+                  +{detailesOrders?.restaurantId.phoneNumber} 
                 </a>
               </button>
             </div>
@@ -270,9 +270,11 @@ const OrderDetails = () => {
              :(
               <div className="flex flex-col items-center justify-center gap-4 py-6">
                 <p className="text-gray-500 text-sm md:text-base">No driver assigned yet.</p>
-                <button onClick={()=>{
+                <button onClick={async()=>{
+                  console.log(detailesOrders);
+                  
                   if(!detailesOrders) return
-                  SearchDriver(detailesOrders)
+                  await SearchDriver(detailesOrders)
                 }} className="w-full py-3 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 transition">
                   Search for Driver
                 </button>

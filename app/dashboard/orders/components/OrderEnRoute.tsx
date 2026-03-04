@@ -28,7 +28,7 @@ export default function orderEnRoute({orderEnRoute}:NewOrdersProps){
                 </span>
                 
                  <span className="font-medium text-xs">
-                 {order.restaurant.nameEtabliss}
+                 {order.restaurantId.nameEtabliss}
                 </span>
               </div>
               

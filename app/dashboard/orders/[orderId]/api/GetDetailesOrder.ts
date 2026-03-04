@@ -20,7 +20,7 @@ export async function GetOrdersPending(user: User | null, orderId: string, callb
         });
         if (res.ok) {
             const data = await res.json();
-             //console.log(data.result.driver);
+             console.log(data);
             if (data.result.orders.length <= 0) return null
            
              const order: Order =data.result.orders[0]

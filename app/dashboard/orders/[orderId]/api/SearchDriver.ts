@@ -9,11 +9,11 @@ export async function SearchDriver(detailesOrders: Order) {
 
       const orderDetailes = {
       orderId: detailesOrders.id,
-      restaurantId: detailesOrders.restaurant._id,
+      restaurantId: detailesOrders.restaurantId._id,
       postionsClient: detailesOrders.postionsClient,
       translocation: detailesOrders.translocation,
       timeOrder: detailesOrders.timeOrder,
-      positionsEtabliss: detailesOrders.restaurant.postionsEtabliss,
+      positionsEtabliss: detailesOrders.restaurantId.postionsEtabliss,
       balanceOrder: detailesOrders.isMonthly?detailesOrders.feedriver:detailesOrders.totalFeePlatform,
      // requestId:DateTime.now().millisecondsSinceEpoch.toString()
       
@@ -29,18 +29,18 @@ export async function SearchDriver(detailesOrders: Order) {
         //credentials: "include",
         body: JSON.stringify(orderDetailes),
         });
-        //console.log(res);
+        console.log(res);
         
         if (res.ok) {
-           // const data = await res.json()
-            //console.log(data);
+            const data = await res.json()
+            console.log(data);
             
         }
         
         return null
         
     } catch (error) {
-        //console.log(error);
+        console.log(error);
         return null
     }
 }

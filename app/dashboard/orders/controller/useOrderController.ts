@@ -28,17 +28,31 @@ export  function useOrderDetails() {
      if (!user) return;
    
      if (ready && socket) {
-     socket?.off("sendOrderToRestaurant")
-     socket?.on("sendOrderToRestaurant" ,(e) =>{
-          const order: Order = e
+       socket?.off("receive_order");
+      socket?.on("receive_order", (e) => {
+        console.log("e",e);
+        
 
-           setNewOrders((prevOrders: Order[]) => {
-            if (!prevOrders.find(o => o.id === order.id)) {
-              return [order, ...prevOrders];
-            }
-            return prevOrders;
-          });
-      })
+        const order: Order = e;
+
+        setNewOrders((prevOrders: Order[]) => {
+          if (!prevOrders.find((o) => o.id === order._id)) {
+            return [order, ...prevOrders];
+          }
+          return prevOrders;
+        });
+      });
+    //  socket?.off("sendOrderToRestaurant")
+    //  socket?.on("sendOrderToRestaurant" ,(e) =>{
+    //       const order: Order = e
+
+    //        setNewOrders((prevOrders: Order[]) => {
+    //         if (!prevOrders.find(o => o.id === order.id)) {
+    //           return [order, ...prevOrders];
+    //         }
+    //         return prevOrders;
+    //       });
+    //   })
 
        socket?.off("driverconfirmation")
        socket?.on("driverconfirmation" ,(e) =>{

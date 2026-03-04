@@ -1,10 +1,20 @@
 // context/SocketProvider.tsx
 "use client";
-import { createContext, useContext, useRef, useEffect, useState, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useRef,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 import { io, Socket } from "socket.io-client";
 import { useUser } from "./UserContext";
 
-export const SocketContext = createContext<{socket: Socket|null, ready: boolean}>({socket:null, ready:false});
+export const SocketContext = createContext<{
+  socket: Socket | null;
+  ready: boolean;
+}>({ socket: null, ready: false });
 
 export default function SocketProvider({ children }: { children: ReactNode }) {
   const socketRef = useRef<Socket | null>(null);
@@ -12,16 +22,19 @@ export default function SocketProvider({ children }: { children: ReactNode }) {
   const { user } = useUser();
 
   useEffect(() => {
-    socketRef.current = io("https://api.bulekeats.com", {
+    socketRef.current = io("http://127.0.0.1:5000", {
       transports: ["websocket"],
       withCredentials: true,
     });
 
     socketRef.current.on("connect", () => {
+      if (!socketRef.current || !user?.ville) return;
       console.log("🟢 Socket connected بعد refresh ✔");
-      socketRef.current?.emit('connectedUser', {"userId": user?.id});
-      socketRef.current?.emit('joinAdmin', {"role": `admin_${user?.ville.toLowerCase()}`});
-      
+      socketRef.current?.emit("connectedUser", { userId: user?.id });
+      socketRef.current?.emit("joinAdmin", {
+        role: `admin_${user?.ville.toLowerCase()}`,
+      });
+
       setReady(true);
     });
 

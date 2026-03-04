@@ -1,6 +1,6 @@
 export type Order = {
   id: string;
-  _id:string
+  _id: string;
   currency: string;
   status: string;
   returned: boolean;
@@ -18,9 +18,9 @@ export type Order = {
   platformFeeStore: number;
   orderTax: number;
   totalFeePlatform: number;
-  totalOrderPrice:number;
-  restaurantNetAmount:number;
-  taxAmount:number
+  totalOrderPrice: number;
+  restaurantNetAmount: number;
+  taxAmount: number;
 
   diffDiscounted: number;
   diffPromoCode: number;
@@ -36,15 +36,15 @@ export type Order = {
   postionsClient: Positions;
   translocation: Positions;
 
-  restaurant: Restaurant;
+  restaurantId: Restaurant;
   send: Send;
   driver?: Driver;
   driverPositions?: DriverPositions;
 
   promoCodes?: PromoCodes;
   coupon?: Coupon;
-  orderCompleted:number
-
+  orderCompleted: number;
+  createdAt: Date | string;
 };
 export type ListOrder = {
   idproducts: string;
@@ -57,7 +57,7 @@ export type ListOrder = {
   messageOrder?: string;
   offer?: boolean;
   discount?: number;
-  listSuplement?:  SuplementChoice[];
+  listSuplement?: SuplementChoice[];
 };
 
 // export type Suplement =  {
@@ -65,14 +65,14 @@ export type ListOrder = {
 //   choix: SuplementChoice[];
 //   requird?: string[];
 // }
-export type SuplementChoice ={
+export type SuplementChoice = {
   id: string;
   _id: string;
   title: string;
-  price: string; 
+  price: string;
   qty: number;
   status: string;
-}
+};
 
 export type StepOrder = {
   stepId: string;
@@ -89,7 +89,7 @@ export type Positions = {
 
 export type Restaurant = {
   _id: string;
-  clientId:string
+  clientId: string;
   typeEtabliss: string;
   nameEtabliss: string;
   timeP: string;
@@ -101,8 +101,7 @@ export type Restaurant = {
   course: boolean;
   notificationsToken?: string;
   postionsEtabliss: Positions;
-  category: Category[]
-  
+  category: Category[];
 };
 export type Category = {
   _id: string;
@@ -115,9 +114,9 @@ export type Category = {
   createdAt: string;
   updatedAt: string;
   products: Product[];
-}
+};
 
-export type  Product ={
+export type Product = {
   _id: string;
   id?: string;
   title: string;
@@ -133,32 +132,30 @@ export type  Product ={
   ratings: unknown[];
   supplements: Supplement[];
   supIds: string[];
-  
-}
+};
 
-export type  Supplement = {
+export type Supplement = {
   _id: string;
   supId: string;
   elementId: string;
   categoryId: string;
 
-  title: string;  
-  chose: string;   
+  title: string;
+  chose: string;
 
   data: SupplementItem[];
 
   createdAt: string;
   updatedAt: string;
   __v: number;
-}
+};
 
-export type SupplementItem ={
+export type SupplementItem = {
   _id: string;
   id: string;
   name: string;
   plusPrice: string;
-}
-
+};
 
 export type Send = {
   id: string;
@@ -177,11 +174,11 @@ export type Driver = {
   Model: string;
   notificationsToken?: string;
   color?: { name: string; code: string };
-  orderId:string
-  ville:string
-  pay:string
-  createdAt:Date
-  document:[]
+  orderId: string;
+  ville: string;
+  pay: string;
+  createdAt: Date;
+  document: [];
 };
 
 export type PromoCodes = {
@@ -205,7 +202,6 @@ export type DriverPositions = {
   id?: string;
   postionsDriver: number[];
 };
-
 
 export type UnavailableProduct = {
   id: string;
