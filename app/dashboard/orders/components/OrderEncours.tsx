@@ -24,7 +24,6 @@ export default function OrderEncours({ orderEncours }: NewOrdersProps) {
   else if (minutes !== 0) result = `${minutes} min`;
   else result = "0 min";
 
-  // أضف علامة سالب إذا الوقت انتهى
   return duration < 0 ? `-${result}` : result;
   };
   return (

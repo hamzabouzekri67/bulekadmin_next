@@ -15,10 +15,11 @@ export async function AcceptedOrders(
   secondTime: number,
 ) {
   try {
+    //  console.log("newOrders",newOrders);
     const url = `${API_URL}${ACCEPTED_ORDER_PATH}`;
     const detailesOrder = {
       timePrepare: minutes,
-      orderId: orders.id,
+      orderId: orders._id,
       restaurantId: orders.restaurantId._id,
       translocation: orders.translocation,
       timeOrder: orders.timeOrder,
@@ -45,9 +46,13 @@ export async function AcceptedOrders(
 
     if (res.ok) {
       const data = await res.json();
-      const updated = newOrders.filter((o) => o.id !== orders.id);
-      console.log(data);
-      setNewOrders(updated);
+      if (data || data.status == true) {
+        const updated = newOrders.filter((o) => o._id === data.result.orderId);
+        console.log("updated", updated);
+        console.log("data.result)", data.result);
+        setNewOrders(updated);
+        return;
+      }
 
       return;
     }

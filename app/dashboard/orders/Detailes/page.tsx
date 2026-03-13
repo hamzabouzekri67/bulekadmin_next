@@ -69,7 +69,7 @@ export default function Detailes() {
       return;
     }
 
-    //  console.log(order._id);
+    console.log(order._id);
 
     RejectedOrders({
       order,
@@ -268,27 +268,63 @@ export default function Detailes() {
               </div>
 
               {order.promoCodes && (
-                <div className="mt-2 border-t pt-2">
-                  <div className="flex justify-between">
-                    <p className="text-sm text-gray-500">Code promo</p>
-                    <p className="text-sm">{order.promoCodes.content}</p>
-                  </div>
-                  <div className="flex justify-between">
-                    <p className="text-sm text-gray-500">Remise magasin</p>
-                    <p className="text-sm text-green-700">
-                      {order.promoCodes.storePercent}%
+                <div className="mt-2 border-t pt-2 space-y-1">
+                  {/* رمز العرض */}
+                  <div className="flex justify-between pb-2 border-b border-gray-100">
+                    <p className="text-sm font-medium text-gray-700">
+                      Code promo
+                    </p>
+                    <p className="text-sm font-bold">
+                      {order.promoCodes.promoCode}
                     </p>
                   </div>
-                  <div className="flex justify-between">
-                    <p className="text-sm text-gray-500">Remise application</p>
-                    <p className="text-sm text-green-700">
-                      {order.promoCodes.defaultPercent}%
+
+                  {/* خصومات التطبيق */}
+                  <div className="pt-1">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      Remises Application
                     </p>
+                    <DiscountRow
+                      label="Remise sur repas (App)"
+                      value={order.appFoodpromo}
+                      currency={order.currency}
+                    />
+                    <DiscountRow
+                      label="Remise livraison (App)"
+                      value={order.appDeliverypromo}
+                      currency={order.currency}
+                    />
+                    <DiscountRow
+                      label="Total remise (App)"
+                      value={order.appTotalpromo}
+                      currency={order.currency}
+                    />
                   </div>
-                  <div className="flex justify-between">
-                    <p className="text-sm text-gray-500">Remise totale</p>
-                    <p className="text-sm text-red-600">
-                      -{order.diffPromoCode} {order.currency}
+
+                  {/* خصومات المتجر */}
+                  <div className="pt-1">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      Remises Boutique
+                    </p>
+                    <DiscountRow
+                      label="Remise totale (Boutique)"
+                      value={order.storTotalpromo}
+                      currency={order.currency}
+                    />
+                    <DiscountRow
+                      label="Remise livraison (Boutique)"
+                      value={order.storeDeliverypromo}
+                      currency={order.currency}
+                    />
+                  </div>
+
+                  {/* المجموع الكلي للخصم */}
+                  <div className="flex justify-between mt-2 pt-2 border-t border-dashed border-gray-300">
+                    <p className="text-sm font-bold text-gray-800">
+                      Total remise
+                    </p>
+                    <p className="text-sm font-bold text-red-600">
+                      -{order.storTotalpromo} {order.currency}
                     </p>
                   </div>
                 </div>
@@ -305,7 +341,7 @@ export default function Detailes() {
                 <p className="text-md font-bold text-gray-800">
                   {order.restaurantNetAmount -
                     order.diffDiscounted -
-                    order.diffPromoCode}{" "}
+                    order.storTotalpromo}{" "}
                   {order.currency}
                 </p>
               </div>
@@ -406,6 +442,24 @@ export default function Detailes() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+interface DiscountRowProps {
+  label: string;
+  value: number;
+  currency: string;
+}
+
+export function DiscountRow({ label, value, currency }: DiscountRowProps) {
+  if (!value || value == 0) return null;
+  return (
+    <div className="flex justify-between">
+      <p className="text-sm text-gray-500">{label}</p>
+      <p className="text-sm text-green-700">
+        {value} {currency}
+      </p>
     </div>
   );
 }

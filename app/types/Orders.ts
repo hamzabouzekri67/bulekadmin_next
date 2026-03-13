@@ -45,6 +45,14 @@ export type Order = {
   coupon?: Coupon;
   orderCompleted: number;
   createdAt: Date | string;
+  appFoodpromo:number;
+  appDeliverypromo:number;
+  appTotalpromo:number;
+  storeFoodpromo:number;
+  storeDeliverypromo:number;
+  storTotalpromo:number;
+
+
 };
 export type ListOrder = {
   idproducts: string;

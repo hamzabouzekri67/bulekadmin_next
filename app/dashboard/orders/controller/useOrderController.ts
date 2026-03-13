@@ -99,6 +99,9 @@ export  function useOrderDetails() {
 const fetchOrders = async (url: string, user: User, setNewOrders: (val: Order[]) => void, setOrderEnCours: (val: Order[]) => void, setOrderEnRoute: (val: Order[]) => void, router: ReturnType<typeof useRouter>,) => {
          const orders = await GET(url,user);
 
+         console.log(orders);
+         
+
           if (orders.message === "Invalid Token") {
                  //setUser(null); 
                  router.push("/login");

@@ -119,7 +119,6 @@ interface NewOrdersProps {
 }
 
 export default function OrderTimeDialog({ orders, user }: NewOrdersProps) {
-  // الوقت الأول والوقت الثاني
   const [firstTime, setFirstTime] = useState(5);
   const [secondTime, setSecondTime] = useState(5);
 
@@ -137,9 +136,10 @@ export default function OrderTimeDialog({ orders, user }: NewOrdersProps) {
 
   const handleConfirm = () => {
     if (!user) return;
-    // أرسل الوقتين مع الطلب
-     AcceptedOrders(orders, firstTime , user, newOrders, setNewOrders ,secondTime);
-    //alert(`تم تحديد وقت الطلب: ${firstTime} دقيقة و ${secondTime} دقيقة إضافية`);
+    console.log("orders",newOrders);
+    
+   AcceptedOrders(orders, firstTime , user, newOrders, setNewOrders ,secondTime);
+    
   };
 
   return (
