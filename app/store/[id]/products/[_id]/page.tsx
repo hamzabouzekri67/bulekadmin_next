@@ -99,7 +99,7 @@ function QuantitySelector({order ,product, cartItems ,setOpenedProductId, opened
           (sum, sup) => sum + Number(sup.price) * (sup.qty || 0),
           0
         );
-         const total = product.totla * quantity + supplementsPrice
+         const total = product.total * quantity + supplementsPrice
          setshowTotal(total)
 
   function handleClickOutside(e: MouseEvent) {
@@ -261,7 +261,7 @@ function QuantitySelector({order ,product, cartItems ,setOpenedProductId, opened
           (sum, sup) => sum + Number(sup.price) * (sup.qty || 0),
           0
         );
-         const total = product.totla * newQty + supplementsPrice
+         const total = product.total * newQty + supplementsPrice
          setshowTotal(total)
       
          
@@ -324,7 +324,7 @@ function QuantitySelector({order ,product, cartItems ,setOpenedProductId, opened
           (sum, sup) => sum + Number(sup.price) * (sup.qty || 0),
           0
         );
-         const total = product.totla * quantity + supplementsPrice
+         const total = product.total * quantity + supplementsPrice
          setshowTotal(total)
        
 
@@ -370,7 +370,7 @@ function QuantitySelector({order ,product, cartItems ,setOpenedProductId, opened
           (sum, sup) => sum + Number(sup.price) * (sup.qty || 0),
           0
         );
-         const total = product.totla * quantity + supplementsPrice
+         const total = product.total * quantity + supplementsPrice
          setshowTotal(total)
         if (chose === "requis") {
           const totalRequisQty = newList

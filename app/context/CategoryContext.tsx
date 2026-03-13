@@ -91,7 +91,7 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
                 (item) => item.idproducts === productDetails._id
               );
 
-              const price = productDetails.totla || 0;
+              const price = productDetails.total || 0;
 
               const supplementsPrice = supplements.reduce(
               (sum, sup) => sum + Number(sup.price) * (sup.qty || 0),

@@ -129,7 +129,7 @@ export type Product = {
   id?: string;
   title: string;
   price: string;
-  totla: number;
+  total: number;
   image: string;
   status: "public" | "hidden";
   currency: string;
