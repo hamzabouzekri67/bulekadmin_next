@@ -46,15 +46,23 @@ export async function AcceptedOrders(
 
     if (res.ok) {
       const data = await res.json();
-      if (data || data.status == true) {
-        const updated = newOrders.filter((o) => o._id === data.result.orderId);
-        console.log("updated", updated);
-        console.log("data.result)", data.result);
-        setNewOrders(updated);
-        return;
-      }
 
-      return;
+      const targetId = data.result?.result?.orderId;
+
+      if (targetId) {
+       // console.log("الـ ID المستهدف للحذف:", targetId);
+
+        const updated = newOrders.filter(
+          (o) => String(o._id) !== String(targetId),
+        );
+
+       
+        setNewOrders(updated);
+
+        return;
+      } else {
+        console.error("لم يتم العثور على orderId في المسار data.result.result");
+      }
     }
     //     return null
   } catch (error) {
