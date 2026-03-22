@@ -260,12 +260,12 @@ export default function Detailes() {
                   -{order.taxAmount} {order.currency}
                 </p>
               </div>
-              <div className="flex justify-between">
+              {/* <div className="flex justify-between">
                 <p className="text-md text-gray-500">Rabais</p>
                 <p className="text-md text-red-500">
                   - {order.diffDiscounted} {order.currency}
                 </p>
-              </div>
+              </div> */}
 
               {order.promoCodes && (
                 <div className="mt-2 border-t pt-2 space-y-1">
@@ -330,18 +330,16 @@ export default function Detailes() {
                 </div>
               )}
 
-              {order.diffDiscounted > 0 && (
+              {/* {order.diffDiscounted > 0 && (
                 <p className="text-xs text-amber-600 mt-1 italic">
                   Rabais هذا الخصم تتحمّله إدارة التطبيق بالكامل.
                 </p>
-              )}
+              )} */}
 
               <div className="flex justify-between border-t mt-2 pt-2">
                 <p className="text-md font-bold text-gray-800">Prix final</p>
                 <p className="text-md font-bold text-gray-800">
-                  {order.restaurantNetAmount -
-                    order.diffDiscounted -
-                    order.storTotalpromo}{" "}
+                  {order.restaurantNetAmount - order.storTotalpromo}{" "}
                   {order.currency}
                 </p>
               </div>

@@ -6,7 +6,7 @@ import { useOrderDetails } from "./controller/useOrderController";
 import { Users, Truck, Utensils } from "lucide-react"; // مكتبة أيقونات رائعة
 
 export default function Home() {
-  const { newOrders, orderEnCours, orderEnRoute,stats } = useOrderDetails();
+  const { newOrders, orderEnCours, orderEnRoute, stats } = useOrderDetails();
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen font-sans">
@@ -80,9 +80,8 @@ function StatCard({ title, value, icon, gradient }: StatProps) {
         </div>
       </div>
 
-      {/* لمسة ديكورية: خلفية باهتة */}
       <div
-        className={`absolute -bottom-2 -right-2 w-16 h-16 bg-gradient-to-br ${gradient} opacity-5 rounded-full`}
+        className={`absolute -bottom-2 -right-2 w-16 h-16 bg-linear-to-br ${gradient} opacity-5 rounded-full`}
       />
     </div>
   );

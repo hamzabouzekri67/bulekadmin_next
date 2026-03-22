@@ -227,13 +227,13 @@ const OrderDetails = () => {
                       -{detailesOrders!.taxAmount} {detailesOrders!.currency}
                     </p>
                   </div>
-                  <div className="flex justify-between">
+                  {/* <div className="flex justify-between">
                     <p className="text-md text-gray-500">Rabais</p>
                     <p className="text-md text-red-500">
                       - {detailesOrders!.diffDiscounted}{" "}
                       {detailesOrders!.currency}
                     </p>
-                  </div>
+                  </div> */}
 
                   {detailesOrders!.promoCodes && (
                     <div className="mt-2 border-t pt-2 space-y-1">
@@ -299,11 +299,11 @@ const OrderDetails = () => {
                     </div>
                   )}
 
-                  {detailesOrders!.diffDiscounted > 0 && (
+                  {/* {detailesOrders!.diffDiscounted > 0 && (
                     <p className="text-xs text-amber-600 mt-1 italic">
                       Rabais هذا الخصم تتحمّله إدارة التطبيق بالكامل.
                     </p>
-                  )}
+                  )} */}
 
                   <div className="flex justify-between border-t mt-2 pt-2">
                     <p className="text-md font-bold text-gray-800">
@@ -311,7 +311,7 @@ const OrderDetails = () => {
                     </p>
                     <p className="text-md font-bold text-gray-800">
                       {detailesOrders!.restaurantNetAmount -
-                        detailesOrders!.diffDiscounted -
+                      //  detailesOrders!.diffDiscounted -
                         detailesOrders!.storTotalpromo}{" "}
                       {detailesOrders!.currency}
                     </p>
