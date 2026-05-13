@@ -29,10 +29,10 @@ export function FetchPendingOrders() {
     if (!user) return;
     if (ready && socket) {
       console.log("e");
-      
+
       socket?.off("receive_order");
       socket?.on("receive_order", (e) => {
-          console.log(e);
+        // console.log(e);
         const order: Order = e;
         handleNewOrder(order);
       });
@@ -40,14 +40,15 @@ export function FetchPendingOrders() {
 
     const fetchOrders = async () => {
       const orders = await GetOrdersPending(url, user);
-      //console.log(orders);
 
       if (!orders || !orders.result.orders) return null;
       const pendingOrders: Order[] = [];
 
       for (const key in orders.result.orders) {
         const order: Order = orders.result.orders[key];
-        pendingOrders.push(order);
+        if (order.claimId === null || order.claimId === undefined) {
+          pendingOrders.push(order);
+        }
       }
       setNewOrders(pendingOrders);
     };

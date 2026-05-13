@@ -68,6 +68,8 @@ export function useLoginController() {
           return
          }
 
+          console.error("Error in Client:", e);
+
          if (data.message === "invalid_credentials") {
             setError("Email أو Password غير صحيح");
           } else {
@@ -75,6 +77,7 @@ export function useLoginController() {
           }
           
         } else {
+
         setError("Email أو Password غير صحيح");
         }
         } catch (e) {

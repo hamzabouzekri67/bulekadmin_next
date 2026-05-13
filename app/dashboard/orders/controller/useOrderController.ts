@@ -18,6 +18,8 @@ export function useOrderDetails() {
   const {
     newOrders,
     setNewOrders,
+    myOrders,
+    setmyOrders,
     orderEnCours,
     setOrderEnCours,
     orderEnRoute,
@@ -95,6 +97,7 @@ export function useOrderDetails() {
       url,
       user,
       setNewOrders,
+      setmyOrders,
       setOrderEnCours,
       setOrderEnRoute,
       router,
@@ -103,6 +106,7 @@ export function useOrderDetails() {
   }, [ready, setNewOrders, socket, url, user]);
   return {
     newOrders,
+    myOrders,
     orderEnCours,
     orderEnRoute,
     stats,
@@ -113,6 +117,7 @@ const fetchOrders = async (
   url: string,
   user: User,
   setNewOrders: (val: Order[]) => void,
+  setmyOrders: (val: Order[]) => void,
   setOrderEnCours: (val: Order[]) => void,
   setOrderEnRoute: (val: Order[]) => void,
   router: ReturnType<typeof useRouter>,
@@ -137,9 +142,16 @@ const fetchOrders = async (
 
   if (!orders || !orders.result.orders) return null;
 
-  const pending = orders.result.orders.filter(
-    (o: Order) => o.status === "pending",
-  );
+  const pending = orders.result.orders.filter((o: Order) => {
+    return (
+      o.status === "pending" && (o.claimId === null || o.claimId === undefined)
+    );
+  });
+
+  const myOrder = orders.result.orders.filter((o: Order) => {
+    return o.status === "pending" && o.claimId === user.id;
+  });
+
   const enCours = orders.result.orders.filter(
     (o: Order) => o.status === "prepare" || o.status === "ready",
   );
@@ -148,6 +160,7 @@ const fetchOrders = async (
   );
 
   setNewOrders(pending);
+  setmyOrders(myOrder);
   setOrderEnCours(enCours);
   setOrderEnRoute(enRoute);
   setStats({

@@ -122,7 +122,7 @@ export default function OrderTimeDialog({ orders, user }: NewOrdersProps) {
   const [firstTime, setFirstTime] = useState(5);
   const [secondTime, setSecondTime] = useState(5);
 
-  const { newOrders, setNewOrders } = useOrders();
+  const { myOrders, setmyOrders } = useOrders();
 
   const increase = (type: "first" | "second") => {
     if (type === "first" && firstTime < 60) setFirstTime(firstTime + 1);
@@ -136,9 +136,9 @@ export default function OrderTimeDialog({ orders, user }: NewOrdersProps) {
 
   const handleConfirm = () => {
     if (!user) return;
-    console.log("orders",newOrders);
+    console.log("orders",myOrders);
     
-   AcceptedOrders(orders, firstTime , user, newOrders, setNewOrders ,secondTime);
+   AcceptedOrders(orders, firstTime , user, myOrders, setmyOrders ,secondTime);
     
   };
 

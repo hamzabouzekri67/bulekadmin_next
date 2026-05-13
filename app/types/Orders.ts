@@ -23,7 +23,6 @@ export type Order = {
   totalOrderPrice: number;
   restaurantNetAmount: number;
   taxAmount: number;
-
   diffDiscounted: number;
   diffPromoCode: number;
   offerfee: number;
@@ -53,6 +52,7 @@ export type Order = {
   storeFoodpromo: number;
   storeDeliverypromo: number;
   storTotalpromo: number;
+  claimId: string;
 };
 export type ListOrder = {
   idproducts: string;

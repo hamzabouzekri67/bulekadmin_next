@@ -1,17 +1,21 @@
 import { User } from "@/app/context/UserContext";
 import { Order, UnavailableProduct } from "@/app/types/Orders";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { Dispatch, SetStateAction } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL_BACKEND;
+const web_URL = process.env.NEXT_PUBLIC_API_URL;
+
 const ACCEPTED_ORDER_PATH = process.env.NEXT_PUBLIC_ACCEPTED_BACKEND;
 const REJECT_ORDER_PATH = process.env.NEXT_PUBLIC_REJECT_ORDER;
+const PROCESS_ORDERS = process.env.NEXT_PUBLIC_PROCESS_ORDERS;
 
 export async function AcceptedOrders(
   orders: Order,
   minutes: number,
   user: User,
-  newOrders: Order[],
-  setNewOrders: (val: Order[]) => void,
+  myOrders: Order[],
+  setmyOrders: (val: Order[]) => void,
   secondTime: number,
 ) {
   try {
@@ -50,18 +54,17 @@ export async function AcceptedOrders(
       const targetId = data.result?.result?.orderId;
 
       if (targetId) {
-       // console.log("الـ ID المستهدف للحذف:", targetId);
+        // console.log("الـ ID المستهدف للحذف:", targetId);
 
-        const updated = newOrders.filter(
+        const updated = myOrders.filter(
           (o) => String(o._id) !== String(targetId),
         );
 
-       
-        setNewOrders(updated);
+        setmyOrders(updated);
 
         return;
       } else {
-        console.error("لم يتم العثور على orderId في المسار data.result.result");
+        //console.log("لم يتم العثور على orderId في المسار data.result.result");
       }
     }
     //     return null
@@ -76,7 +79,7 @@ type RejetecOrder = {
   unavailableProducts: UnavailableProduct[];
   user: User | null;
   indexMessage: number | 0;
-  setNewOrders: Dispatch<SetStateAction<Order[]>>;
+  setmyOrders: Dispatch<SetStateAction<Order[]>>;
 };
 
 export async function RejectedOrders({
@@ -84,7 +87,7 @@ export async function RejectedOrders({
   unavailableProducts,
   user,
   indexMessage,
-  setNewOrders,
+  setmyOrders,
 }: RejetecOrder) {
   try {
     const url = `${API_URL}${REJECT_ORDER_PATH}`;
@@ -114,7 +117,7 @@ export async function RejectedOrders({
       if (data && data.result) {
         if (!data.result.status) return;
 
-        setNewOrders((prev) => prev.filter((e) => e._id !== order?._id));
+        setmyOrders((prev) => prev.filter((e) => e._id !== order?._id));
       }
 
       return;
@@ -122,6 +125,79 @@ export async function RejectedOrders({
     //     return null
   } catch (error) {
     //console.log(error);
+    return null;
+  }
+}
+
+type ProcessOrder = {
+  order: Order | null;
+  user: User | null;
+  setNewOrders: Dispatch<SetStateAction<Order[]>>;
+  router: AppRouterInstance;
+};
+export async function processOrder({
+  order,
+  user,
+  setNewOrders,
+  router
+}: ProcessOrder) {
+  try {
+    const url = `${web_URL}${PROCESS_ORDERS}`;
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        orderId: order?._id,
+        claimId: user?.id,
+      }),
+    });
+
+    console.log(res);
+
+    if (res.ok) {
+      const data = await res.json();
+
+      if (data && data.result) {
+        // الحالة الأولى: نجاح العملية (أنت من حجزت الطلب)
+        if (data.result.status) {
+          // حذف الطلب من القائمة لأنه انتقل لـ "طلباتي"
+          setNewOrders((prev) => prev.filter((e) => e._id !== order?._id));
+
+          const goToDetails = window.confirm(
+            `Commande #${order?.TrackingId} acceptée !\n\n` +
+              `Voulez-vous traiter cette commande maintenant ?\n` +
+              `- "OK" لتعديل حالة الطلب وتجهيزه.\n` +
+              `- "Annuler" للبقاء هنا واستلام طلبات أخرى.`,
+          );
+
+          if (goToDetails) {
+            router.push(`/dashboard/orders/myDetails`);
+            console.log("التوجه إلى تفاصيل الطلب...");
+          } else {
+            console.log("البقاء لاستلام مزيد من الطلبات");
+          }
+
+          // هنا يمكنك توجيه المستخدم إذا أردت كما ناقشنا سابقاً
+        }
+        // الحالة الثانية: فشل العملية (الطلب طار!)
+        else {
+          // إظهار رسالة تنبيه للمسير
+          alert(
+            data.result.message ||
+              "Désolé, ce commande est déjà prise par un autre agent.",
+          );
+
+          // حذف الطلب من القائمة فوراً لكي لا يحاول الضغط عليه مرة أخرى
+          setNewOrders((prev) => prev.filter((e) => e._id !== order?._id));
+        }
+      }
+    }
+  } catch (error) {
+    console.log("error");
     return null;
   }
 }

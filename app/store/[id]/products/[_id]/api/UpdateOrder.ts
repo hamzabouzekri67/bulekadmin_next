@@ -39,7 +39,11 @@ export async function UpdateOrder({
     if (res.ok) {
       const data = await res.json();
       if (data) {
-        router.replace("/dashboard/orders/Detailes");
+        if (order?.status == "prepare") {
+          router.replace(`/dashboard/orders/${order?._id}`);
+        } else {
+          router.replace("/dashboard/orders/Detailes");
+        }
       }
     }
   } catch (error) {

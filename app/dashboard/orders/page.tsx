@@ -1,4 +1,5 @@
 "use client";
+import MyOrders from "./components/myOrder";
 import NewOrders from "./components/NewOrder";
 import OrderEncours from "./components/OrderEncours";
 import OrderEnRoute from "./components/OrderEnRoute";
@@ -6,7 +7,8 @@ import { useOrderDetails } from "./controller/useOrderController";
 import { Users, Truck, Utensils } from "lucide-react"; // مكتبة أيقونات رائعة
 
 export default function Home() {
-  const { newOrders, orderEnCours, orderEnRoute, stats } = useOrderDetails();
+  const { newOrders, myOrders, orderEnCours, orderEnRoute, stats } =
+    useOrderDetails();
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen font-sans">
@@ -34,6 +36,7 @@ export default function Home() {
 
       <div className="space-y-8 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <NewOrders newOrders={newOrders} />
+        <MyOrders myOrders={myOrders} />
         <OrderEncours orderEncours={orderEnCours} />
         <OrderEnRoute orderEnRoute={orderEnRoute} />
       </div>

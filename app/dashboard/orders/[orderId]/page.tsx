@@ -9,7 +9,8 @@ import { Order, Driver } from "@/app/types/Orders";
 import { PageShimmer } from "./components/shimmerPage";
 import { SearchDriver } from "./api/SearchDriver";
 import { useSocket } from "@/app/hooks/useSocket";
-import { DiscountRow } from "../Detailes/page";
+import { DiscountRow } from "../myDetails/page";
+import Link from "next/link";
 
 function isValidObjectId(id: string) {
   return /^[0-9a-fA-F]{24}$/.test(id);
@@ -102,9 +103,17 @@ const OrderDetails = () => {
           <button className="w-full sm:w-auto px-4 py-2 border rounded-lg flex items-center gap-2 hover:bg-gray-100">
             Print
           </button>
-          <button className="w-full sm:w-auto px-4 py-2 bg-black text-white rounded-lg flex items-center gap-2">
-            Confirm Return
-          </button>
+          {detailesOrders?.status === "prepare" && (
+            <Link
+              className="bg-gray-600 text-white text-sm py-2 px-4 rounded-md hover:bg-gray-700 transition-colors"
+              href={{
+                pathname: `/store/${detailesOrders?.restaurantId?._id}`,
+                query: { orderId: detailesOrders?._id || detailesOrders?.id }, // تأكد من استخدام المعرف الصحيح للطلبية
+              }}
+            >
+              Mettre à jour
+            </Link>
+          )}
         </div>
       </div>
 
@@ -311,7 +320,7 @@ const OrderDetails = () => {
                     </p>
                     <p className="text-md font-bold text-gray-800">
                       {detailesOrders!.restaurantNetAmount -
-                      //  detailesOrders!.diffDiscounted -
+                        //  detailesOrders!.diffDiscounted -
                         detailesOrders!.storTotalpromo}{" "}
                       {detailesOrders!.currency}
                     </p>
