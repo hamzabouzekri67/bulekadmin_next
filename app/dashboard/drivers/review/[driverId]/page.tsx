@@ -178,12 +178,12 @@ const DriverReviewPage = () => {
                 <FileText size={20} />
               </div>
               <h3 className="font-black text-slate-900 uppercase tracking-tight">
-                Documents de Bord ({driverDetailes?.document.length || 0})
+                Documents de Bord ({driverDetailes?.document?.length || 0})
               </h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {driverDetailes?.document.map((imgUrl, index) => (
+              {driverDetailes?.document?.map((imgUrl, index) => (
                 <div key={index} className="group flex flex-col gap-3">
                   <div className="flex items-center justify-between px-1">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Document {index + 1}</span>
