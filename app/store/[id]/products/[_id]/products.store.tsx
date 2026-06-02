@@ -61,8 +61,7 @@ export default function ProductsStore() {
   const orderId = SearchParams?.get("orderId");
   const validOrderId = id as string;
 
- // console.log(orderId);
-  
+  // console.log(orderId);
 
   useEffect(() => {
     if (!user) return;
@@ -147,7 +146,7 @@ export default function ProductsStore() {
       );
       setOpenMenuId(null);
 
-      const response = await updateStatusProducts(product._id,nextStatus);
+      const response = await updateStatusProducts(product._id, nextStatus);
 
       if (response && response.status === true) {
         if (typeof fetchCategories === "function") {
@@ -298,7 +297,7 @@ export default function ProductsStore() {
 
       const response = await updateProducts(formData);
 
-     // console.log(Object.fromEntries(formData.entries()));
+      // console.log(Object.fromEntries(formData.entries()));
 
       if (response && response.status === true && !!response.result) {
         const serverProduct = response.result;
@@ -347,32 +346,34 @@ export default function ProductsStore() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4" dir="rtl">
+    <div className="max-w-4xl mx-auto p-3 md:p-4" dir="rtl">
       {/* زر إضافة منتج */}
       {order?.id === undefined && (
-        <div className="mb-6 flex justify-end">
+        <div className="mb-4 md:mb-6 flex justify-end">
           <button
             onClick={handleOpenAddModal}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-black px-5 py-3 rounded-2xl shadow-md transition-all active:scale-95"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-black px-5 py-3 rounded-2xl shadow-md transition-all active:scale-95 text-sm md:text-base"
           >
-            <PlusCircle size={20} />
+            <PlusCircle size={18} />
             <span>إضافة منتج جديد</span>
           </button>
         </div>
       )}
 
-      <div className="grid gap-4">
+      {/* قائمة المنتجات */}
+      <div className="grid gap-3 md:gap-4">
         {localProducts.map((e, index) => (
           <div
             key={e._id || index}
-            className={`bg-white p-4 rounded-2xl border hover:shadow-md transition group ${
+            className={`bg-white p-3 md:p-4 rounded-2xl border hover:shadow-md transition group ${
               e.status === "pause"
                 ? "opacity-60 border-dashed bg-gray-50/50"
                 : ""
             }`}
           >
-            <div className="flex items-center gap-4">
-              <div className="relative w-20 h-20 shrink-0 shadow-sm border border-gray-100 rounded-xl overflow-hidden">
+            <div className="flex flex-row items-center gap-3 md:gap-4">
+              {/* صورة المنتج */}
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 shadow-sm border border-gray-100 rounded-xl overflow-hidden">
                 {!!e.image ? (
                   <Image
                     src={e.image}
@@ -381,43 +382,47 @@ export default function ProductsStore() {
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-300 text-xs">
+                  <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-300 text-[10px] sm:text-xs text-center p-1">
                     لا توجد صورة
                   </div>
                 )}
                 {e.status === "pause" && (
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-[10px] font-bold text-white">
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-white text-center p-0.5">
                     موقوف مؤقتاً
                   </div>
                 )}
               </div>
 
+              {/* تفاصيل المنتج */}
               <div className="flex-1 min-w-0">
                 {category?.offer && (
-                  <span className="inline-block text-[10px] bg-red-50 text-red-600 font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider mb-1">
+                  <span className="inline-block text-[9px] sm:text-[10px] bg-red-50 text-red-600 font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider mb-1">
                     Best Seller
                   </span>
                 )}
                 <h4
-                  className={`font-black text-gray-800 text-base md:text-lg truncate ${e.status === "pause" ? "line-through text-gray-400" : ""}`}
+                  className={`font-black text-gray-800 text-sm sm:text-base md:text-lg truncate ${
+                    e.status === "pause" ? "line-through text-gray-400" : ""
+                  }`}
                 >
                   {e.title}
                 </h4>
                 {!!e.desc && (
-                  <p className="text-xs text-gray-400 font-medium mt-0.5 line-clamp-2 leading-relaxed pl-2">
+                  <p className="text-[11px] sm:text-xs text-gray-400 font-medium mt-0.5 line-clamp-2 leading-relaxed pl-2">
                     {e.desc}
                   </p>
                 )}
-                <p className="text-orange-600 font-black text-lg md:text-xl mt-1.5 flex items-center gap-1">
+                <p className="text-orange-600 font-black text-base sm:text-lg md:text-xl mt-1 flex items-center gap-1">
                   <span>{e.price}</span>
-                  <span className="text-xs font-bold text-gray-500">
+                  <span className="text-[10px] sm:text-xs font-bold text-gray-500">
                     {e.currency || user?.currency}
                   </span>
                 </p>
               </div>
 
+              {/* التحكم بالكمية أو القائمة المنسدلة */}
               {!!orderId ? (
-                <div className="flex justify-center items-center">
+                <div className="flex justify-center items-center shrink-0">
                   <QuantitySelector
                     order={order}
                     product={e}
@@ -428,12 +433,12 @@ export default function ProductsStore() {
                   />
                 </div>
               ) : (
-                <div className="relative flex justify-center items-center">
+                <div className="relative flex justify-center items-center shrink-0">
                   <button
                     onClick={() => toggleMenu(e._id)}
                     className="p-2 hover:bg-gray-100 rounded-full transition-colors focus:outline-none"
                   >
-                    <MoreVertical size={20} className="text-gray-500" />
+                    <MoreVertical size={18} className="text-gray-500" />
                   </button>
 
                   {openMenuId === e._id && (
@@ -443,33 +448,33 @@ export default function ProductsStore() {
                         onClick={() => setOpenMenuId(null)}
                       />
 
-                      <div className="absolute right-0 top-10 w-44 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-20">
+                      <div className="absolute left-0 sm:right-0 top-9 w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-20 origin-top-left sm:origin-top-right">
                         {/* ✏️ زر تعديل المنتج */}
                         <button
                           onClick={() => handleOpenEditModal(e)}
-                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-right font-medium"
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-right font-medium"
                         >
-                          <Edit2 size={16} className="text-blue-500" />
+                          <Edit2 size={15} className="text-blue-500" />
                           <span>تعديل المنتج</span>
                         </button>
 
                         <hr className="border-gray-100 my-1" />
 
-                        {/* 🔄 زر التفعيل والايقاف المؤقت اللحظي */}
+                        {/* 🔄 زر التفعيل والايقاف */}
                         {e.status === "public" ? (
                           <button
                             onClick={() => handleToggleProductStatus(e)}
-                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-amber-600 hover:bg-amber-50 text-right font-medium"
+                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-amber-600 hover:bg-amber-50 text-right font-medium"
                           >
-                            <Pause size={16} />
+                            <Pause size={15} />
                             <span>إيقاف مؤقت (Pause)</span>
                           </button>
                         ) : (
                           <button
                             onClick={() => handleToggleProductStatus(e)}
-                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-green-600 hover:bg-green-50 text-right font-medium"
+                            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-green-600 hover:bg-green-50 text-right font-medium"
                           >
-                            <Play size={16} />
+                            <Play size={15} />
                             <span>تفعيل (Active)</span>
                           </button>
                         )}
@@ -489,25 +494,25 @@ export default function ProductsStore() {
 
       {/* ==================== نافذة إضافة/تعديل المنتج الرئيسي ==================== */}
       {showProductModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[85vh] overflow-y-auto shadow-2xl">
-            <div className="flex justify-between items-center mb-4 border-b pb-2">
-              <h3 className="font-black text-xl text-gray-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 overflow-x-hidden overflow-y-auto layout-scrollbar">
+          <div className="bg-white rounded-2xl p-5 md:p-6 w-[95%] sm:max-w-md my-auto max-h-[90vh] overflow-y-auto shadow-2xl transition-all">
+            <div className="flex justify-between items-center mb-4 border-b pb-3">
+              <h3 className="font-black text-lg md:text-xl text-gray-800">
                 {productModalMode === "add"
                   ? "إضافة منتج جديد"
                   : "تعديل تفاصيل المنتج"}
               </h3>
               <button
                 onClick={() => setShowProductModal(false)}
-                className="text-gray-500 hover:text-gray-800"
+                className="text-gray-500 hover:text-gray-800 p-1"
               >
-                <X size={24} />
+                <X size={22} />
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">
+                <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-1">
                   اسم المنتج *
                 </label>
                 <input
@@ -516,13 +521,13 @@ export default function ProductsStore() {
                   onChange={(e) =>
                     setNewProduct({ ...newProduct, title: e.target.value })
                   }
-                  className="w-full border p-2.5 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-black"
+                  className="w-full border p-2.5 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-black text-sm"
                   placeholder="مثال: بيتزا مارغريتا"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">
+                <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-1">
                   السعر *
                 </label>
                 <input
@@ -531,17 +536,17 @@ export default function ProductsStore() {
                   onChange={(e) =>
                     setNewProduct({ ...newProduct, price: e.target.value })
                   }
-                  className="w-full border p-2.5 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-black"
+                  className="w-full border p-2.5 rounded-xl focus:ring-2 focus:ring-green-500 outline-none text-black text-sm"
                   placeholder="السعر بالـ DZD"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">
+                <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-1">
                   محتوى أو وصف المنتج
                 </label>
                 <textarea
-                  rows={4}
+                  rows={3}
                   value={newProduct.description}
                   onChange={(e) =>
                     setNewProduct({
@@ -549,7 +554,7 @@ export default function ProductsStore() {
                       description: e.target.value,
                     })
                   }
-                  className="w-full border p-2.5 rounded-xl focus:ring-2 focus:ring-green-500 outline-none resize-none text-black"
+                  className="w-full border p-2.5 rounded-xl focus:ring-2 focus:ring-green-500 outline-none resize-none text-black text-sm"
                   placeholder="اكتب هنا محتويات المنتج بالتفصيل..."
                 />
               </div>
@@ -566,14 +571,14 @@ export default function ProductsStore() {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingImage}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed rounded-xl font-medium text-sm transition border-gray-300 hover:bg-gray-50 text-gray-600"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed rounded-xl font-bold text-xs sm:text-sm transition border-gray-300 hover:bg-gray-50 text-gray-600"
                 >
-                  <Upload size={18} />
+                  <Upload size={16} />
                   <span>تغيير أو اختيار صورة</span>
                 </button>
                 {imagePreview && (
-                  <div className="mt-4 text-center flex flex-col items-center justify-center">
-                    <div className="relative w-32 h-32 border-2 border-gray-200 rounded-xl bg-gray-50 shadow-sm">
+                  <div className="mt-3 text-center flex flex-col items-center justify-center">
+                    <div className="relative w-28 h-28 sm:w-32 sm:h-32 border-2 border-gray-200 rounded-xl bg-gray-50 shadow-sm">
                       <img
                         src={imagePreview}
                         alt="Product Preview"
@@ -585,7 +590,7 @@ export default function ProductsStore() {
                         className="absolute -top-2 -left-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-md transition"
                         title="حذف الصورة"
                       >
-                        <X size={14} />
+                        <X size={12} />
                       </button>
                     </div>
                   </div>
@@ -593,9 +598,9 @@ export default function ProductsStore() {
               </div>
 
               {/* الإضافات الخاصة بالمنتج */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-bold text-gray-700">
+              <div className="border-t pt-3">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-2">
+                  <label className="block text-xs sm:text-sm font-bold text-gray-700">
                     الإضافات (Supplements)
                   </label>
                   <button
@@ -604,7 +609,7 @@ export default function ProductsStore() {
                       setNewSupplement({ title: "", chose: "choix", data: [] });
                       setShowSupplementModal(true);
                     }}
-                    className="text-xs bg-orange-100 text-orange-600 font-bold px-2.5 py-1.5 rounded-lg hover:bg-orange-200 transition"
+                    className="text-[11px] bg-orange-100 text-orange-600 font-bold px-2.5 py-2 rounded-lg hover:bg-orange-200 transition text-center"
                   >
                     + إضافة Supplement جديد
                   </button>
@@ -612,7 +617,7 @@ export default function ProductsStore() {
 
                 {existingSupplements.length > 0 && (
                   <div className="mb-3">
-                    <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1 bg-gray-50 rounded-xl border border-dashed">
+                    <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1.5 bg-gray-50 rounded-xl border border-dashed">
                       {existingSupplements.map((sup, sIdx) => (
                         <button
                           key={sup._id || sIdx}
@@ -631,7 +636,7 @@ export default function ProductsStore() {
                               }));
                             }
                           }}
-                          className="text-xs bg-gray-200 hover:bg-orange-500 hover:text-white text-gray-700 font-medium px-2 py-1 rounded-lg transition"
+                          className="text-[11px] bg-gray-200 hover:bg-orange-500 hover:text-white text-gray-700 font-medium px-2 py-1 rounded-lg transition"
                         >
                           + {sup.title}
                         </button>
@@ -641,43 +646,43 @@ export default function ProductsStore() {
                 )}
 
                 {newProduct.supplements.length > 0 ? (
-                  <div className="space-y-2 bg-gray-50 p-3 rounded-xl border">
+                  <div className="space-y-2 bg-gray-50 p-2 sm:p-3 rounded-xl border max-h-44 overflow-y-auto">
                     {newProduct.supplements.map((s, idx) => (
                       <div
                         key={s._id || idx}
-                        className="flex justify-between items-center bg-white p-2.5 rounded-xl border border-gray-100 shadow-sm"
+                        className="flex justify-between items-center bg-white p-2.5 rounded-xl border border-gray-100 shadow-sm gap-2"
                       >
-                        <div className="flex flex-col gap-0.5">
-                          <span className="font-bold text-sm text-gray-800">
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                          <span className="font-bold text-xs sm:text-sm text-gray-800 truncate">
                             {s.title}
                           </span>
-                          <span className="text-[11px] text-gray-500 font-medium">
+                          <span className="text-[10px] sm:text-[11px] text-gray-500 font-medium truncate">
                             {s.chose === "requis" ? "⚠️ إجباري" : "⚙️ اختياري"}{" "}
                             • {s.data.length} عناصر
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 shrink-0">
                           <button
                             type="button"
                             onClick={() => handleEditSupplement(s)}
                             className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"
                           >
-                            <Edit2 size={15} />
+                            <Edit2 size={14} />
                           </button>
                           <button
                             type="button"
                             onClick={() => handleRemoveSupplement(s._id)}
                             className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
                           >
-                            <X size={16} />
+                            <X size={15} />
                           </button>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-gray-400 italic bg-gray-50 p-3 rounded-xl border border-dashed text-center">
+                  <p className="text-[11px] text-gray-400 italic bg-gray-50 p-3 rounded-xl border border-dashed text-center">
                     لا توجد إضافات مضافة لهذا المنتج بعد.
                   </p>
                 )}
@@ -686,7 +691,7 @@ export default function ProductsStore() {
               <button
                 onClick={handleSaveProduct}
                 disabled={!newProduct.title || !newProduct.price}
-                className={`w-full py-3 rounded-xl font-black text-white shadow transition-all mt-4 ${
+                className={`w-full py-3 rounded-xl font-black text-white shadow transition-all mt-4 text-sm ${
                   newProduct.title && newProduct.price
                     ? "bg-green-600 hover:bg-green-700"
                     : "bg-gray-300 cursor-not-allowed"
@@ -703,15 +708,15 @@ export default function ProductsStore() {
 
       {/* ==================== نافذة إضافة الـ Supplement الفرعية ==================== */}
       {showSupplementModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-          <div className="bg-white rounded-2xl p-5 max-w-sm w-full shadow-2xl">
-            <div className="flex justify-between items-center mb-3 border-b pb-1">
-              <h4 className="font-black text-lg text-gray-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 overflow-x-hidden overflow-y-auto layout-scrollbar">
+          <div className="bg-white rounded-2xl p-5 w-[95%] sm:max-w-sm my-auto shadow-2xl transition-all">
+            <div className="flex justify-between items-center mb-3 border-b pb-2">
+              <h4 className="font-black text-base sm:text-lg text-gray-800">
                 تفاصيل الـ Supplement
               </h4>
               <button
                 onClick={() => setShowSupplementModal(false)}
-                className="text-gray-500"
+                className="text-gray-500 p-0.5"
               >
                 <X size={20} />
               </button>
@@ -719,7 +724,7 @@ export default function ProductsStore() {
 
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">
+                <label className="block text-[11px] sm:text-xs font-bold text-gray-600 mb-1">
                   اسم مجموعة الإضافات
                 </label>
                 <input
@@ -737,7 +742,7 @@ export default function ProductsStore() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">
+                <label className="block text-[11px] sm:text-xs font-bold text-gray-600 mb-1">
                   نوع الاختيار
                 </label>
                 <select
@@ -755,19 +760,19 @@ export default function ProductsStore() {
                 </select>
               </div>
 
-              <div className="border p-3 rounded-xl bg-gray-50">
-                <p className="text-xs font-bold text-gray-700 mb-2">
+              <div className="border p-2.5 sm:p-3 rounded-xl bg-gray-50">
+                <p className="text-[11px] sm:text-xs font-bold text-gray-700 mb-2">
                   إضافة خيار فرعي وسعره
                 </p>
-                <div className="grid grid-cols-2 gap-2 mb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
                   <input
                     type="text"
                     value={supItem.name}
                     onChange={(e) =>
                       setSupItem({ ...supItem, name: e.target.value })
                     }
-                    className="border p-2 rounded-lg text-xs text-black"
-                    placeholder="اسم الخيار (جبن مضاعف)"
+                    className="border p-2 rounded-lg text-xs text-black w-full"
+                    placeholder="الاسم (مثال: جبن مضاعف)"
                   />
                   <input
                     type="number"
@@ -775,27 +780,27 @@ export default function ProductsStore() {
                     onChange={(e) =>
                       setSupItem({ ...supItem, plusPrice: e.target.value })
                     }
-                    className="border p-2 rounded-lg text-xs text-black"
+                    className="border p-2 rounded-lg text-xs text-black w-full"
                     placeholder="السعر الزائد (+50)"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={handleAddSubItemToSupplement}
-                  className="w-full bg-gray-800 text-white font-bold text-xs py-1.5 rounded-lg hover:bg-gray-900"
+                  className="w-full bg-gray-800 text-white font-bold text-[11px] py-2 rounded-lg hover:bg-gray-900 transition"
                 >
                   درج الخيار بالقائمة الفرعية
                 </button>
 
                 {newSupplement.data.length > 0 && (
-                  <div className="mt-3 space-y-1 max-h-24 overflow-y-auto border-t pt-2">
+                  <div className="mt-3 space-y-1.5 max-h-24 overflow-y-auto border-t pt-2">
                     {newSupplement.data.map((item, idx) => (
                       <div
                         key={idx}
-                        className="flex justify-between text-[11px] text-gray-600"
+                        className="flex justify-between text-[11px] text-gray-600 px-1"
                       >
                         <span>{item.name}</span>
-                        <span>+{item.plusPrice} DZD</span>
+                        <span className="font-bold">+{item.plusPrice} DZD</span>
                       </div>
                     ))}
                   </div>
@@ -807,7 +812,7 @@ export default function ProductsStore() {
                 disabled={
                   !newSupplement.title || newSupplement.data.length === 0
                 }
-                className={`w-full py-2.5 rounded-xl font-bold text-white text-sm ${
+                className={`w-full py-2.5 rounded-xl font-bold text-white text-xs sm:text-sm transition ${
                   newSupplement.title && newSupplement.data.length > 0
                     ? "bg-orange-500 hover:bg-orange-600"
                     : "bg-gray-300 cursor-not-allowed"
