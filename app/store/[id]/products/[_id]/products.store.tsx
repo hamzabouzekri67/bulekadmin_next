@@ -298,7 +298,7 @@ export default function ProductsStore() {
 
       const response = await updateProducts(formData);
 
-      console.log(Object.fromEntries(formData.entries()));
+     // console.log(Object.fromEntries(formData.entries()));
 
       if (response && response.status === true && !!response.result) {
         const serverProduct = response.result;

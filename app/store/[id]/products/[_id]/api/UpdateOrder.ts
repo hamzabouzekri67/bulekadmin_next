@@ -56,6 +56,9 @@ export async function updateProducts(formData: FormData) {
   try {
     const url = `${API_URL}${UPLOAD_PRODUCTS}`;
 
+    console.log(url);
+    
+
     const res = await fetch(url, {
       method: "POST",
       headers: {},
