@@ -68,7 +68,7 @@ export default function Detailes() {
       return;
     }
 
-    console.log(order._id);
+   // console.log(order._id);
 
     RejectedOrders({
       order,

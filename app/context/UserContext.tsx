@@ -12,6 +12,7 @@ export type User = {
   ville: string;
   notificationsToken: string;
   balance: number;
+  currency:string
 };
 
 type UserContextType = {

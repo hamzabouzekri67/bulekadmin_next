@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const UPDATE_ORDER = process.env.NEXT_PUBLIC_UPDATE_ORDER;
-
+const UPLOAD_PRODUCTS = process.env.NEXT_PUBLIC_UPLOAD_PRODUCTS;
+const UPDATE_STATUS_PRODUCTS = process.env.NEXT_PUBLIC_UPDATE_STATUS_PRODUCTS;
 interface UpdateOrderProps {
   order: Order | null;
   cartItems: CartItem[];
@@ -42,11 +43,54 @@ export async function UpdateOrder({
         if (order?.status == "prepare") {
           router.replace(`/dashboard/orders/${order?._id}`);
         } else {
-          router.replace("/dashboard/orders/Detailes");
+          router.replace("/dashboard/orders/myDetails");
         }
       }
     }
   } catch (error) {
     //console.log(error);
+  }
+}
+
+export async function updateProducts(formData: FormData) {
+  try {
+    const url = `${API_URL}${UPLOAD_PRODUCTS}`;
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {},
+      credentials: "include",
+      body: formData,
+    });
+    if (res.ok) {
+      const data = await res.json();
+      //console.log(data);
+
+      return data;
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export async function updateStatusProducts(_id: string, nextStatus: string) {
+  try {
+    const url = `${API_URL}${UPDATE_STATUS_PRODUCTS}`;
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        productId: _id,
+        nextStatus: nextStatus,
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data;
+    }
+  } catch (error) {
+    console.log(error);
   }
 }

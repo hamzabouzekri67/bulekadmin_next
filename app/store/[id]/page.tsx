@@ -1,12 +1,8 @@
 'use client'
 
 
-export default function ProductsStore(){
-    //  const { id } = useParams();
-    //  const validOrderId = id as string;
-    //  useEffect(()=>{
-    //     GetProducts(validOrderId)
-    //  })
+export default function pageProducts(){
+
 
     return (
         <div></div>

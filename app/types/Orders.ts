@@ -115,7 +115,7 @@ export type Category = {
   _id: string;
   clientId: string;
   category: string;
-  status: "public" | "hidden";
+  status: "public" | "pause";
   indexing: number;
   discount: number;
   offer: boolean;
@@ -128,10 +128,11 @@ export type Product = {
   _id: string;
   id?: string;
   title: string;
+  desc: string;
   price: string;
   total: number;
   image: string;
-  status: "public" | "hidden";
+  status: "public" | "pause" | "";
   currency: string;
   categoryId: string;
   clientId: string;

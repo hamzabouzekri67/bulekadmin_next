@@ -1,6 +1,7 @@
 "use client";
 import { Filter, Search, Store, MapPin, Phone, Eye } from "lucide-react";
-import { useState, useEffect, useMemo } from "react"; // إضافة useMemo للأداء
+import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import {
   acceptedStoreSent,
   GetStoreList,
@@ -203,6 +204,7 @@ export default function ListStore() {
                         /* الزر يظهر فقط للـ Admin */
                         <button
                           onClick={async () => {
+                            if (v.status === "accepted") return;
                             const status =
                               v.status === "sent"
                                 ? "accepted"
@@ -232,6 +234,7 @@ export default function ListStore() {
                         </span>
                       )}
                     </td>
+
                     <td className="px-6 py-5 text-right">
                       <div className="flex flex-col items-end">
                         <div className="flex items-center gap-1 text-sm font-bold">
@@ -246,9 +249,26 @@ export default function ListStore() {
 
                     <td className="px-6 py-5 text-right">
                       <div className="flex flex-col items-end">
-                        <div className="flex items-center gap-1 text-sm font-bold">
-                          <Eye size={20} className="text-red-600" />
-                        </div>
+                        {/* 🌟 فحص ما إذا كانت الحالة هي "sent" لتعطيل الزر */}
+                        {v.status === "sent" ? (
+                          <div
+                            title="لا يمكن الدخول، الطلب أو المتجر أُرسل بالفعل"
+                            className="flex items-center gap-1 text-sm font-bold text-gray-400 opacity-40 cursor-not-allowed"
+                          >
+                            <Eye size={20} />
+                          </div>
+                        ) : (
+                          /* 🌟 إذا كانت الحالة طبيعية وليست "sent"، يظهر الرابط الفعّال */
+                          <Link
+                            href={{
+                              pathname: `/store/${v._id}`,
+                              query: { menu: true },
+                            }}
+                            className="flex items-center gap-1 text-sm font-bold text-red-600 transition-transform duration-200 hover:scale-110 cursor-pointer"
+                          >
+                            <Eye size={20} />
+                          </Link>
+                        )}
                       </div>
                     </td>
                   </tr>
