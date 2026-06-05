@@ -4,11 +4,15 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { updateProducts, updateStatusProducts } from "./api/UpdateOrder";
 import {
+  ArrowDown,
+  ArrowUp,
   Edit2,
+  Edit3,
   MoreVertical,
   Pause,
   Play,
   PlusCircle,
+  Trash2,
   Upload,
   X,
 } from "lucide-react";
@@ -211,21 +215,35 @@ export default function ProductsStore() {
   };
 
   const existingSupplements = useMemo(() => {
-    const map = new Map<string, Supplement>();
-    localProducts.forEach((p) => {
-      if (p.supplements && Array.isArray(p.supplements)) {
-        p.supplements.forEach((s: Supplement) => {
-          if (s && s.title) {
-            const key = s.title.trim().toLowerCase();
-            if (!map.has(key)) {
-              map.set(key, s);
-            }
+    const map = new Map<
+      string,
+      NewSupplementType & { categoryName: string; categoryId: string }
+    >();
+
+    categories.forEach((cat) => {
+      if (cat.products && Array.isArray(cat.products)) {
+        cat.products.forEach((p) => {
+          if (p.supplements && Array.isArray(p.supplements)) {
+            p.supplements.forEach((s: Supplement) => {
+              if (s && s.title) {
+                const key = s.title.trim().toLowerCase();
+
+                if (!map.has(key)) {
+                  map.set(key, {
+                    ...s,
+                    categoryName: cat.category,
+                    categoryId: cat._id,
+                  });
+                }
+              }
+            });
           }
         });
       }
     });
-    return Array.from(map.values()) as NewSupplementType[];
-  }, [localProducts]);
+
+    return Array.from(map.values());
+  }, [categories]); // تعتمد الآن على تغيير الفئات بالكامل وليس فقط المنتجات المحلية
 
   const handleEditSupplement = (supplement: NewSupplementType) => {
     setNewSupplement({
@@ -335,6 +353,29 @@ export default function ProductsStore() {
     }
   };
 
+  const moveSupplementUp = (index: number) => {
+    if (index === 0) return; // إذا كان العنصر الأول بالفعل، لا تفعل شيء
+    setNewProduct((prev) => {
+      const updated = [...prev.supplements];
+      // تبديل الأماكن
+      const temp = updated[index];
+      updated[index] = updated[index - 1];
+      updated[index - 1] = temp;
+      return { ...prev, supplements: updated };
+    });
+  };
+
+  const moveSupplementDown = (index: number) => {
+    setNewProduct((prev) => {
+      if (index === prev.supplements.length - 1) return prev; // إذا كان العنصر الأخير
+      const updated = [...prev.supplements];
+      // تبديل الأماكن
+      const temp = updated[index];
+      updated[index] = updated[index + 1];
+      updated[index + 1] = temp;
+      return { ...prev, supplements: updated };
+    });
+  };
   return (
     <div className="max-w-4xl mx-auto p-3 md:p-4" dir="rtl">
       {/* زر إضافة منتج */}
@@ -607,30 +648,141 @@ export default function ProductsStore() {
                   </button>
                 </div>
 
+                {/* قسم الإضافات المدرجة في هذا المنتج مسبقاً */}
+                {newProduct.supplements &&
+                  newProduct.supplements.length > 0 && (
+                    <div className="mb-4">
+                      <label className="block text-xs font-bold text-gray-700 mb-2">
+                        مجموعات الإضافات الحالية للمنتج (
+                        {newProduct.supplements.length}):
+                      </label>
+
+                      <div className="space-y-2 max-h-60 overflow-y-auto layout-scrollbar pr-1">
+                        {newProduct.supplements.map((supplement, index) => (
+                          <div
+                            key={supplement._id || index}
+                            className="border border-gray-200 bg-gray-50/50 rounded-xl p-3 shadow-sm flex flex-col justify-between gap-2"
+                          >
+                            {/* رأس بطاقة الـ Supplement: العنوان والنوع والتحكم */}
+                            <div className="flex justify-between items-start border-b border-gray-200/60 pb-2">
+                              <div>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-black text-xs text-gray-800">
+                                    {supplement.title}
+                                  </span>
+                                  <span
+                                    className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold ${
+                                      supplement.chose === "requis"
+                                        ? "bg-red-50 text-red-600 border border-red-100"
+                                        : "bg-blue-50 text-blue-600 border border-blue-100"
+                                    }`}
+                                  >
+                                    {supplement.chose === "requis"
+                                      ? "إجباري"
+                                      : "اختياري"}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* أزرار التعديل والحذف لمجموعة الإضافات */}
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleEditSupplement(supplement)
+                                  }
+                                  className="p-1 text-gray-500 hover:text-orange-500 hover:bg-white rounded-md border border-transparent hover:border-gray-200 transition shadow-sm"
+                                  title="تعديل المجموعة"
+                                >
+                                  <Edit3 size={13} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleRemoveSupplement(supplement._id)
+                                  }
+                                  className="p-1 text-gray-400 hover:text-red-500 hover:bg-white rounded-md border border-transparent hover:border-gray-200 transition shadow-sm"
+                                  title="حذف المجموعة بالكامل"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* الخيارات الفرعية المدرجة داخل هذه المجموعة */}
+                            <div className="flex flex-wrap gap-1">
+                              {supplement.data &&
+                                supplement.data.map((item, idx) => (
+                                  <div
+                                    key={item._id || idx}
+                                    className="text-[10px] bg-white border border-gray-200 text-gray-700 px-2 py-0.5 rounded-md flex items-center gap-1"
+                                  >
+                                    <span className="font-medium text-gray-600">
+                                      {item.name}
+                                    </span>
+                                    <span className="font-bold text-orange-500">
+                                      (
+                                      {item.plusPrice &&
+                                      Number(item.plusPrice) > 0
+                                        ? `+${item.plusPrice}`
+                                        : "مجاني"}
+                                      )
+                                    </span>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                 {existingSupplements.length > 0 && (
                   <div className="mb-3">
-                    <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1.5 bg-white rounded-xl border border-dashed">
+                    <label className="block text-xs font-bold text-gray-600 mb-1">
+                      إضافة إضافات جاهزة من الفئات الأخرى:
+                    </label>
+                    <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto p-1.5 bg-white rounded-xl border border-dashed">
                       {existingSupplements.map((sup, sIdx) => (
                         <button
-                          key={sup._id || sIdx} // 👈 Added unique key here
+                          key={sup._id || sIdx}
                           type="button"
                           onClick={() => {
                             const isAlreadyAdded = newProduct.supplements.some(
-                              (s) => s.title === sup.title,
+                              (s) =>
+                                s.title.trim().toLowerCase() ===
+                                sup.title.trim().toLowerCase(),
                             );
+
                             if (!isAlreadyAdded) {
+                              // فصل خصائص الفئة لكي لا نرسلها إلى السيرفر ضمن كائن الـ supplement
+                              const {
+                                categoryName,
+                                categoryId,
+                                ...pureSupplement
+                              } = sup;
+
                               setNewProduct((prev) => ({
                                 ...prev,
                                 supplements: [
                                   ...prev.supplements,
-                                  { ...sup, _id: Date.now().toString() + sIdx },
+                                  {
+                                    ...pureSupplement,
+                                    _id: Date.now().toString() + sIdx,
+                                  },
                                 ],
                               }));
                             }
                           }}
-                          className="text-[11px] bg-gray-100 hover:bg-orange-500 hover:text-white text-gray-700 font-bold px-2 py-1 rounded-md transition"
+                          className="flex items-center gap-1 text-[11px] bg-gray-50 hover:bg-orange-500 border border-gray-200 hover:border-orange-500 hover:text-white text-gray-700 font-medium px-2 py-1 rounded-md transition"
                         >
-                          + {sup.title}
+                          {/* اسم الإضافة */}
+                          <span>+ {sup.title}</span>
+
+                          {/* شارة اسم الفئة التابع لها */}
+                          <span className="text-[9px] opacity-70 bg-gray-200 text-gray-800 px-1 rounded group-hover:bg-orange-600 group-hover:text-white transition-colors duration-150">
+                            ({sup.categoryName})
+                          </span>
                         </button>
                       ))}
                     </div>
@@ -706,9 +858,16 @@ export default function ProductsStore() {
           <div className="bg-white rounded-3xl w-[95%] sm:max-w-sm my-auto max-h-[80vh] flex flex-col overflow-hidden shadow-2xl transition-all">
             {/* رأس النافذة الثابت */}
             <div className="flex justify-between items-center px-4 py-3 border-b shrink-0 bg-white rounded-t-3xl">
-              <h4 className="font-black text-sm sm:text-base text-gray-800">
-                تفاصيل الـ Supplement
-              </h4>
+              <div className="flex flex-col">
+                <h4 className="font-black text-sm sm:text-base text-gray-800">
+                  تفاصيل الـ Supplement
+                </h4>
+                {newSupplement.title && (
+                  <span className="text-[10px] text-orange-500 font-bold truncate max-w-[200px]">
+                    جاري تعديل: {newSupplement.title}
+                  </span>
+                )}
+              </div>
               <button
                 onClick={() => setShowSupplementModal(false)}
                 className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full"
@@ -788,19 +947,107 @@ export default function ProductsStore() {
                   درج الخيار بالقائمة الفرعية
                 </button>
 
+                {/* القائمة المدرجة مع إظهار العنوان وإمكانية الترتيب والحذف المباشر */}
                 {newSupplement.data.length > 0 && (
-                  <div className="mt-3 space-y-1.5 max-h-32 overflow-y-auto border-t pt-2">
-                    {newSupplement.data.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="flex justify-between items-center text-[11px] text-gray-600 bg-gray-50 p-1.5 rounded-md"
-                      >
-                        <span>{item.name}</span>
-                        <span className="font-bold text-orange-600">
-                          +{item.plusPrice} DZD
-                        </span>
-                      </div>
-                    ))}
+                  <div className="mt-3 border-t pt-2">
+                    <div className="flex justify-between items-center mb-1.5 px-0.5">
+                      <span className="text-[10px] text-gray-400 font-bold">
+                        الخيارات الحالية مرتبة:
+                      </span>
+                      <span className="text-[10px] text-gray-700 font-black bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
+                        {newSupplement.title || "بدون عنوان حالياً"}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5 max-h-32 overflow-y-auto layout-scrollbar">
+                      {newSupplement.data.map((item, idx) => (
+                        <div
+                          key={item._id || idx}
+                          className="flex justify-between items-center text-[11px] text-gray-600 bg-gray-50 p-1.5 rounded-md border border-gray-100"
+                        >
+                          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            {/* رقم الترتيب الصغير */}
+                            <span className="text-[9px] font-bold bg-gray-200 text-gray-600 w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0">
+                              {idx + 1}
+                            </span>
+                            <div className="flex items-center gap-1 truncate">
+                              <span className="font-medium text-gray-800 truncate">
+                                {item.name}
+                              </span>
+                              <span className="font-bold text-orange-600 shrink-0">
+                                +{item.plusPrice} DZD
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            {/* سهم نقل للأعلى */}
+                            <button
+                              type="button"
+                              disabled={idx === 0}
+                              onClick={() => {
+                                if (idx === 0) return;
+                                setNewSupplement((prev) => {
+                                  const newData = [...prev.data];
+                                  const temp = newData[idx];
+                                  newData[idx] = newData[idx - 1];
+                                  newData[idx - 1] = temp;
+                                  return { ...prev, data: newData };
+                                });
+                              }}
+                              className={`p-0.5 rounded transition ${
+                                idx === 0
+                                  ? "text-gray-200 cursor-not-allowed"
+                                  : "text-gray-400 hover:text-orange-500 hover:bg-white"
+                              }`}
+                            >
+                              <ArrowUp size={11} />
+                            </button>
+
+                            {/* سهم نقل للأسفل */}
+                            <button
+                              type="button"
+                              disabled={idx === newSupplement.data.length - 1}
+                              onClick={() => {
+                                if (idx === newSupplement.data.length - 1)
+                                  return;
+                                setNewSupplement((prev) => {
+                                  const newData = [...prev.data];
+                                  const temp = newData[idx];
+                                  newData[idx] = newData[idx + 1];
+                                  newData[idx + 1] = temp;
+                                  return { ...prev, data: newData };
+                                });
+                              }}
+                              className={`p-0.5 rounded transition ${
+                                idx === newSupplement.data.length - 1
+                                  ? "text-gray-200 cursor-not-allowed"
+                                  : "text-gray-400 hover:text-orange-500 hover:bg-white"
+                              }`}
+                            >
+                              <ArrowDown size={11} />
+                            </button>
+
+                            {/* فاصل خطي رفيع */}
+                            <span className="w-[1px] h-3 bg-gray-200 mx-0.5" />
+
+                            {/* زر الحذف الفردي */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setNewSupplement((prev) => ({
+                                  ...prev,
+                                  data: prev.data.filter((_, i) => i !== idx),
+                                }));
+                              }}
+                              className="text-gray-400 hover:text-red-500 p-0.5 rounded transition-colors"
+                            >
+                              <Trash2 size={11} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
