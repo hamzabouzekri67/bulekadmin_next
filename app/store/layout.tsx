@@ -1,4 +1,4 @@
-// app/dashboard/[id]/layout.tsx (أو مسار ملفك الأب الحالي)
+// app/dashboard/[id]/layout.tsx
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -37,8 +37,8 @@ export default function DashboardLayout({
   const [isSaving, setIsSaving] = useState(false);
 
   // States الخاصة بالبيانات
+  // 💡 المصفوفة الآن تخزن الـ name الإنجليزي الثابت، وتم حذف state الـ newTag القديمة
   const [tags, setTags] = useState<string[]>([]);
-  const [newTag, setNewTag] = useState("");
   const [prepTime, setPrepTime] = useState("");
 
   const [workingHours, setWorkingHours] = useState<WeeklyHours>({
@@ -81,16 +81,15 @@ export default function DashboardLayout({
     getStoreStatus();
   }, [id]);
 
-  const handleAddTag = () => {
-    if (tags.length >= 3) return;
-    if (newTag.trim() && !tags.includes(newTag.trim())) {
-      setTags([...tags, newTag.trim()]);
-      setNewTag("");
+  // 💡 دالة الـ Toggle الجديدة: تضيف الاسم إذا لم يكن موجوداً وتحذفه إذا كان موجوداً بحد أقصى 3 تصنيفات
+  const handleTagToggle = (tagName: string) => {
+    if (tags.includes(tagName)) {
+      setTags((prev) => prev.filter((t) => t !== tagName));
+    } else {
+      if (tags.length < 3) {
+        setTags((prev) => [...prev, tagName]);
+      }
     }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter((t) => t !== tagToRemove));
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,16 +101,13 @@ export default function DashboardLayout({
   };
 
   // 🎯 دالة فحص جاهزية بيانات الخطوة الحالية لمنع الانتقال بدون حقول مكتملة
-  // 🎯 ابحث عن هذه الدالة في ملف المكون الأب وقم بتحديث الـ case 3:
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
-        return tags.length > 0;
+        return tags.length > 0; // يضمن أن المستخدم اختار تصنيفاً واحداً على الأقل للانتقال
       case 2:
         return prepTime.trim() !== "";
       case 3:
-        // ✅ تمت إزالة شرط الـ location بنجاح!
-        // الآن الشرط يتطلب فقط: تحديد إحداثيات الخريطة + رفع صورة الغلاف
         return coordinates !== null && coverImage !== null;
       default:
         return false;
@@ -134,11 +130,8 @@ export default function DashboardLayout({
 
       if (res && res.status === true) {
         alert("تم حفظ البيانات وتنشيط المحل بنجاح! 🎉");
-
-        // 🔄 تحديث الصفحة فوراً لإعادة فحص حالة الـ Layout والانتقال للواجهة النشطة
         window.location.reload();
       } else {
-        // في حال رجوع رسالة خطأ معينة من الباكيند نقوم بعرضها
         alert(res?.message || "فشل حفظ البيانات، يرجى التحقق من المدخلات.");
       }
 
@@ -192,13 +185,8 @@ export default function DashboardLayout({
 
           {/* رندرة المكونات */}
           {currentStep === 1 && (
-            <StepTags
-              tags={tags}
-              newTag={newTag}
-              setNewTag={setNewTag}
-              onAddTag={handleAddTag}
-              onRemoveTag={handleRemoveTag}
-            />
+            /* 💡 تم تحديث الـ Props هنا لتمرير المتغيرات والتابع الجديد المتوافق مع الـ Typescript */
+            <StepTags tags={tags} onTagToggle={handleTagToggle} />
           )}
 
           {currentStep === 2 && (
@@ -237,7 +225,6 @@ export default function DashboardLayout({
               <button
                 type="button"
                 onClick={() => setCurrentStep((prev) => prev + 1)}
-                // 💡 تعطيل الزر برمجياً إذا لم تكتمل شروط الخطوة الحالية وتخفيف لونه شفافاً
                 disabled={!isStepValid()}
                 className="flex items-center gap-1 py-2.5 px-5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm transition shadow-sm disabled:opacity-40 disabled:hover:bg-red-600 disabled:cursor-not-allowed"
               >
@@ -248,7 +235,6 @@ export default function DashboardLayout({
               <button
                 type="button"
                 onClick={handleFinalSubmit}
-                // 💡 تعطيل زر الإنهاء والتثبيت حتى تكتمل جميع مدخلات خطوة الخريطة والصورة والعنوان
                 disabled={isSaving || !isStepValid()}
                 className="flex items-center gap-1 py-2.5 px-6 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-sm transition shadow-md disabled:opacity-40 disabled:hover:bg-green-600 disabled:cursor-not-allowed"
               >

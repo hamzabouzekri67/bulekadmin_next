@@ -7,8 +7,10 @@ const ADD_CATG = process.env.NEXT_PUBLIC_ADD_CATG;
 const UPDATE_CATG = process.env.NEXT_PUBLIC_UPDATE_CATG;
 const DELETED_CATG = process.env.NEXT_PUBLIC_DELETED_CATG;
 const CHECK_STATUS_STORE = process.env.NEXT_PUBLIC_CHECK_STATUS_STORE;
-const COMPELETED_STORE_PROFILE = process.env.NEXT_PUBLIC_COMPELETED_STORE_PROFILE;
+const COMPELETED_STORE_PROFILE =
+  process.env.NEXT_PUBLIC_COMPELETED_STORE_PROFILE;
 
+const GET_TAGS = process.env.NEXT_PUBLIC_GET_TAGS;
 export async function checkStatusStore(id: string | string[]) {
   try {
     const url = `${API_URL}${CHECK_STATUS_STORE}`;
@@ -35,15 +37,14 @@ export async function checkStatusStore(id: string | string[]) {
 
 export async function compeletedProfileStore(dataToSend: FormData) {
   try {
-
     console.log(dataToSend);
-    
+
     const url = `${API_URL}${COMPELETED_STORE_PROFILE}`;
 
     const res = await fetch(url, {
       method: "POST",
-       headers: {},
-     // headers: { "Content-Type": "application/json" },
+      headers: {},
+      // headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: dataToSend,
     });
@@ -171,6 +172,27 @@ export async function deleteCatg(editingCategoryId: string) {
       body: JSON.stringify({
         ctgId: editingCategoryId,
       }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return data;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function getTags() {
+  try {
+    const url = `${API_URL}${GET_TAGS}`;
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
     });
 
     if (res.ok) {
