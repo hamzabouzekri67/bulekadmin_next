@@ -53,6 +53,35 @@ export type Order = {
   storeDeliverypromo: number;
   storTotalpromo: number;
   claimId: string;
+  discountSettings: DiscountSettings;
+  deliverySettings:DeliverySettings
+  discountAmount: number;
+};
+
+export type DiscountSponsoredBy = {
+  _id?: string;
+  restaurantShare?: number;
+  platformShare?: number;
+};
+
+export type DiscountSettings = {
+  discountType: "percentage" | "fixed" | string;
+  discountValue: number;
+  hasOrderDiscount: boolean;
+  minAmountForDiscount: number;
+  sponsoredBy?: DiscountSponsoredBy;
+};
+
+export type DeliverySponsoredBy = {
+  restaurantShare: number;
+  platformShare: number;
+};
+
+export type DeliverySettings = {
+  freeDeliveryMinAmount: number;
+  hasFreeDeliveryThreshold: boolean;
+  maxFreeDeliveryDistance: number;
+  sponsoredBy: DeliverySponsoredBy;
 };
 export type ListOrder = {
   idproducts: string;
@@ -141,6 +170,7 @@ export type Product = {
   ratings: unknown[];
   supplements: Supplement[];
   supIds: string[];
+  discount:number
 };
 
 export type Supplement = {

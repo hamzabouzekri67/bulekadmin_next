@@ -1,6 +1,6 @@
 {
-  "name": "Bulek Eats",
-  "short_name": "BulekEats",
+  "name": "Bulek Admin",
+  "short_name": "BulekAdmin",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

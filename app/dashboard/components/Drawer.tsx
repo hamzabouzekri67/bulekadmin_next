@@ -11,9 +11,10 @@ import {
   Bell,
   LogOut,
   ShieldCheck,
-  Wallet,
   X,
   CreditCard,
+  Sparkles,
+  Percent, // استيراد الأيقونة الخاصة بالمطاعم والعروض المميزة
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -65,7 +66,20 @@ export default function Drawer() {
     },
   ];
 
+  if (user?.role === "super_admin" || user?.role === "admin") {
+    links.push({
+      href: "/dashboard/offers", 
+      label: "Offres & Livraisons",
+      icon: <Percent size={20} />,
+    });
+  }
+
   if (user?.role === "super_admin") {
+    links.push({
+      href: "/dashboard/featured",
+      label: "Sélectionnés (Featured)",
+      icon: <Sparkles size={20} />,
+    });
     links.push({
       href: "/dashboard/notifications",
       label: "Notifications",

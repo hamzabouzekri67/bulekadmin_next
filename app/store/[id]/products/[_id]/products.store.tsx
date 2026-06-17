@@ -78,6 +78,7 @@ export default function ProductsStore() {
     price: "",
     image: "",
     description: "",
+    comparePrice: 0,
     supplements: [] as NewSupplementType[],
   });
 
@@ -107,6 +108,7 @@ export default function ProductsStore() {
       price: "",
       image: "",
       description: "",
+      comparePrice: 0,
       supplements: [],
     });
     setImagePreview("");
@@ -123,6 +125,7 @@ export default function ProductsStore() {
       price: String(product.price),
       image: product.image || "",
       description: product.desc || "",
+      comparePrice: product.discount || 0,
       supplements: (product.supplements as NewSupplementType[]) || [],
     });
     setImagePreview(product.image || "");
@@ -131,7 +134,6 @@ export default function ProductsStore() {
     setShowProductModal(true);
   };
 
-  // تفعيل أو إيقاف منتج مؤقتاً
   const handleToggleProductStatus = async (product: Product) => {
     try {
       const nextStatus = product.status === "public" ? "pause" : "public";
@@ -305,6 +307,7 @@ export default function ProductsStore() {
       formData.append("assistedBy", user?.id ?? "");
       formData.append("description", newProduct.description ?? "");
       formData.append("price", newProduct.price);
+      formData.append("discount", newProduct.comparePrice.toString());
       formData.append("supplements", JSON.stringify(newProduct.supplements));
 
       const response = await updateProducts(formData);
@@ -376,6 +379,27 @@ export default function ProductsStore() {
       return { ...prev, supplements: updated };
     });
   };
+
+  const ExpandableDesc = ({ text }: { text: string }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    return (
+      <span
+        onClick={(e) => {
+          e.stopPropagation(); // 💡 يمنع الضغطة من تفعيل أي زر أو حدث في الكرت الأب
+          setIsExpanded(!isExpanded);
+        }}
+        className={`text-[14px] sm:text-xs text-gray-400 font-medium cursor-pointer transition-all leading-tight pl-2 ${
+          isExpanded
+            ? "block max-w-full line-clamp-none whitespace-normal text-gray-500 backend-fade"
+            : "line-clamp-3 max-w-40 sm:max-w-70" // عند الاختصار ليترك مساحة للأزرار
+        }`}
+        title={isExpanded ? "اضغط للاختصار" : "اضغط لعرض كامل النص"}
+      >
+        {text}
+      </span>
+    );
+  };
   return (
     <div className="max-w-4xl mx-auto p-3 md:p-4" dir="rtl">
       {/* زر إضافة منتج */}
@@ -439,17 +463,23 @@ export default function ProductsStore() {
                   >
                     {e.title}
                   </h4>
-                  {!!e.desc && (
-                    <p className="text-[11px] sm:text-xs text-gray-400 font-medium mt-0.5 line-clamp-2 leading-relaxed pl-2">
-                      {e.desc}
-                    </p>
-                  )}
-                  <p className="text-orange-600 font-black text-base sm:text-lg md:text-xl mt-1 flex items-center gap-1 justify-start">
+                  {!!e.desc && <ExpandableDesc text={e.desc} />}
+                  <p className="text-orange-600 font-black text-base sm:text-lg md:text-xl flex items-center gap-0.5">
                     <span>{e.price}</span>
-                    <span className="text-[10px] sm:text-xs font-bold text-gray-500">
+                    <span className="text-[10px] sm:text-xs font-bold text-gray-500 mr-0.5">
                       {e.currency || user?.currency}
                     </span>
                   </p>
+
+                  {/* السعر القديم قبل الخصم - يظهر فقط إذا كان موجوداً وأكبر من السعر الحالي */}
+                  {e.discount && Number(e.discount) > Number(e.price) && (
+                    <p className="text-gray-400 line-through text-xs sm:text-sm font-medium flex items-center gap-0.5 self-end mb-0.5">
+                      <span>{e.discount}</span>
+                      <span className="text-[9px] sm:text-[10px] font-normal no-underline inline-block text-gray-400 mr-0.5">
+                        {e.currency || user?.currency}
+                      </span>
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -571,6 +601,26 @@ export default function ProductsStore() {
                   }
                   className="w-full border p-2.5 rounded-xl focus:ring-2 focus:ring-orange-500 bg-white outline-none text-black text-sm transition-all"
                   placeholder="السعر بالـ DZD"
+                />
+              </div>
+
+              {/* الخانة الجديدة: السعر قبل الخصم (اختياري) */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">
+                  السعر القديم قبل الخصم (إختياري)
+                </label>
+                <input
+                  type="number"
+                  value={newProduct.comparePrice || 0}
+                  onChange={(e) =>
+                    setNewProduct({
+                      ...newProduct,
+                      comparePrice:
+                        e.target.value === "" ? 0 : Number(e.target.value),
+                    })
+                  }
+                  className="w-full border p-2.5 rounded-xl focus:ring-2 focus:ring-orange-500 bg-white outline-none text-black text-sm transition-all border-gray-200"
+                  placeholder="مثال: 750"
                 />
               </div>
 

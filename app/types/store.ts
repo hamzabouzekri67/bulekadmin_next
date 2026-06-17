@@ -5,9 +5,9 @@ export interface DocumentItem {
 
 export interface Workday {
   _id: string;
-  day: number;      
-  time: string;     
-  totime: string;   
+  day: number;
+  time: string;
+  totime: string;
 }
 
 export interface GeoPoint {
@@ -56,5 +56,8 @@ export interface StoreData {
   createdAt?: string;
   updatedAt?: string;
   notificationsToken?: string;
+  isFeatured: boolean;
+  campaignStart?: string;
+  campaignEnd?: string;
   __v?: number;
 }

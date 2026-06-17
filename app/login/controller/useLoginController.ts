@@ -1,15 +1,11 @@
 "use client";
 import { useState } from "react";
-const API_URL = process.env.NEXT_PUBLIC_API_URL; 
-const LOGIN_PATH = process.env.NEXT_PUBLIC_LOGIN_PATH; 
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const LOGIN_PATH = process.env.NEXT_PUBLIC_LOGIN_PATH;
 
 import { useRouter } from "next/navigation";
 import { getFcmToken } from "../../components/providers";
 import { useUser } from "../../context/UserContext";
-
-
-
 
 export function useLoginController() {
   const router = useRouter();
@@ -22,10 +18,6 @@ export function useLoginController() {
   const [isLoading, setIsLoading] = useState(false);
   const { user, setUser } = useUser();
 
-
- 
-
-
   const handleEmailChange = (value: string) => {
     setEmail(value);
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -37,56 +29,50 @@ export function useLoginController() {
   };
 
   const handleLogin = async (e?: React.MouseEvent<HTMLButtonElement>) => {
-      e?.preventDefault();
-      setError("");
-     const url = `${API_URL}${LOGIN_PATH}`;
+    e?.preventDefault();
+    setError("");
+    const url = `${API_URL}${LOGIN_PATH}`;
 
-     if (!isValid || !isPasswordValid) {
+    if (!isValid || !isPasswordValid) {
       setError("الرجاء إدخال Email و Password صحيحين");
       return;
-    }  
-       const tokenFcm = await getFcmToken()   
-  
-      
-      
-       setIsLoading(true);
-      try {
+    }
+    const tokenFcm = await getFcmToken();
 
-        const res = await fetch(url, {
+    setIsLoading(true);
+    try {
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({"userName":email, password ,tokenFcm}),
-        });
+        body: JSON.stringify({ userName: email, password, tokenFcm }),
+      });
 
-        if (res.ok) {
-         const data = await res.json();
-         
-         if (data.status === true) {
-           setUser(data.result)                                 
-           router.push("./dashboard")
-          return
-         }
+      if (res.ok) {
+        const data = await res.json();
 
-          console.error("Error in Client:", e);
+        if (data.status === true) {
+          setUser(data.result);
+          router.push("./dashboard");
+          console.log(data);
+          return;
+        }
 
-         if (data.message === "invalid_credentials") {
-            setError("Email أو Password غير صحيح");
-          } else {
-            setError(data.messaging);
-          }
-          
+        if (data.message === "invalid_credentials") {
+          setError("Email أو Password غير صحيح");
         } else {
-
+          setError(data.messaging);
+        }
+      } else {
         setError("Email أو Password غير صحيح");
-        }
-        } catch (e) {
-        console.error("Error in Client:", e);
-        
-         setError("فشل الاتصال بالسيرفر");
-        }finally {
-         setIsLoading(false);
-        }
+      }
+    } catch (e) {
+      console.error("Error in Client:", e);
+
+      setError("فشل الاتصال بالسيرفر");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return {
@@ -99,6 +85,6 @@ export function useLoginController() {
     handleLogin,
     error,
     isLoading,
-    user
+    user,
   };
 }
