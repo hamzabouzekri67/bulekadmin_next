@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { isMobile, isTablet, isDesktop } from "react-device-detect";
+import { isMobile, isAndroid, isIOS, isDesktop ,isTablet} from "react-device-detect";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const LOGIN_PATH = process.env.NEXT_PUBLIC_LOGIN_PATH;
 
@@ -42,15 +42,28 @@ export function useLoginController() {
 
     setIsLoading(true);
     try {
-      let deviceType = "unknown";
-      if (isMobile) deviceType = "mobile";
-      else if (isTablet) deviceType = "tablet";
-      else if (isDesktop) deviceType = "desktop";
+      let deviceType = "web"; // القيمة الافتراضية للكمبيوتر
+
+      if (isMobile || isTablet) {
+        if (isAndroid) {
+          deviceType = "android";
+        } else if (isIOS) {
+          deviceType = "ios";
+        }
+      } else if (isDesktop) {
+        deviceType = "web"; // أو يمكنك تسميته "desktop" إذا أردت
+      }
+
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ userName: email, password, tokenFcm,deviceType }),
+        body: JSON.stringify({
+          userName: email,
+          password,
+          tokenFcm,
+          deviceType,
+        }),
       });
 
       if (res.ok) {
