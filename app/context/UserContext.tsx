@@ -1,7 +1,20 @@
 "use client";
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from "react";
 import { getFcmToken } from "../components/providers";
-import { useRouter } from "next/navigation"; // استيراد الموجّه
+import { useRouter } from "next/navigation";
+import {
+  isMobile,
+  isAndroid,
+  isIOS,
+  isDesktop,
+  isTablet,
+} from "react-device-detect";
 
 export type User = {
   id: string;
@@ -12,7 +25,7 @@ export type User = {
   ville: string;
   notificationsToken: string;
   balance: number;
-  currency:string
+  currency: string;
 };
 
 type UserContextType = {
@@ -40,11 +53,23 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       const url = `${API_URL}${LOGIN_CHECK}`;
       const tokenFcm = await getFcmToken();
 
+      let deviceType = "web"; // القيمة الافتراضية للكمبيوتر
+
+      if (isMobile || isTablet) {
+        if (isAndroid) {
+          deviceType = "android";
+        } else if (isIOS) {
+          deviceType = "ios";
+        }
+      } else if (isDesktop) {
+        deviceType = "web"; // أو يمكنك تسميته "desktop" إذا أردت
+      }
+
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ tokenFcm: tokenFcm }),
+        body: JSON.stringify({ tokenFcm: tokenFcm, deviceType: deviceType }),
       });
 
       if (res.ok) {
@@ -87,7 +112,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, setUser, loading, refreshUser, logout }}>
+    <UserContext.Provider
+      value={{ user, setUser, loading, refreshUser, logout }}
+    >
       {children}
     </UserContext.Provider>
   );
