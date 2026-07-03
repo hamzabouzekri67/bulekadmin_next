@@ -8,7 +8,6 @@ export default function LoginPage() {
   const canLogin = isValid && isPasswordValid;
   const [mounted, setMounted] = useState(false);
 
-  // أنميشن بسيط عند تحميل الصفحة لأول مرة
   useEffect(() => {
     setMounted(true);
   }, []);
