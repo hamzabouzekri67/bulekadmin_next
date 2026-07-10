@@ -7,6 +7,7 @@ import { useCategories } from "@/app/context/CategoryContext";
 import { addCatg, deleteCatg, updateCatg } from "../api/GetProducts";
 import { Category } from "@/app/types/Orders";
 
+import { ParsedUrlQueryInput } from "querystring";
 export default function Drawer() {
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -22,24 +23,26 @@ export default function Drawer() {
   const [isOffer, setIsOffer] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { id } = useParams();
-  const params = useParams();
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id") ?? "";
+  //  const params = useParams();
   const router = useRouter();
   const SearchParams = useSearchParams();
   const orderId = SearchParams?.get("orderId");
   const validOrderId = id as string;
 
-  const { categories, loading, fetchCategories, order } = useCategories();
+  const { categories, loading, fetchCategories, order, isCategoryDeletable } =
+    useCategories();
 
   const [isActive, setIsActive] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
     null,
   );
+  //console.log(id);
 
-  // 🛠️ جلب الـ ID النشط من الرابط (تأكد أن اسم المتغير هنا يطابق اسم المجلد لديك مثل [catId] أو [categoryId])
-  // إذا كان اسم مجلد الفئة عندك مختلفاً، استبدل params.catId باسم المجلد الصحيح.
-  const activeCategoryId = params?._id;
+  const categoryId = searchParams.get("categoryId") ?? "";
+  const activeCategoryId = categoryId;
 
   useEffect(() => {
     const handleResize = () => {
@@ -88,9 +91,34 @@ export default function Drawer() {
           response?._id || response?.data?._id || response?.result?._id;
 
         if (newId) {
-          router.push(
-            `/store/${id}/products/${newId}${orderId ? `?orderId=${orderId}` : ""}`,
-          );
+          // // 1. بناء المتغيرات بشكل آمن
+          // const params = new URLSearchParams();
+          // if (orderId) {
+          //   params.set("orderId", orderId);
+          // }
+
+          // const path = `/store/${id}/products/${newId}`;
+
+          // const queryString = params.toString();
+          // router.push(queryString ? `${path}?${queryString}` : path);
+
+          const queryParams: Record<string, string> = {
+            id: id,
+            categoryId: newId,
+          };
+
+          // 2. إضافة المتغيرات الاختيارية (مثل orderId)
+          if (orderId) {
+            queryParams.orderId = orderId;
+          }
+
+          // 3. بناء الرابط النهائي باستخدام URLSearchParams
+          // هذا يضمن توافق الـ Build وتجنب أخطاء الـ TypeScript
+          const searchParams = new URLSearchParams(queryParams);
+          const url = `/store/details/products/details?${searchParams.toString()}`;
+
+          // 4. الانتقال للرابط
+          router.push(url);
         }
       } else if (modalMode === "edit" && editingCategoryId) {
         await updateCatg(
@@ -159,19 +187,20 @@ export default function Drawer() {
       setShowDeleteModal(false);
       setCategoryToDelete(null);
 
-      // 5. توجيه المستخدم تلقائياً بناءً على موقعه
+      console.log("isDeletingActiveCategory", isDeletingActiveCategory);
+
       if (isDeletingActiveCategory) {
-        if (fallbackCategoryId) {
-          // الانتقال للفئة البديلة (السابقة أو التالية)
-          router.push(
-            `/store/${id}/products/${fallbackCategoryId}${orderId ? `?orderId=${orderId}` : ""}`,
-          );
-        } else {
-          // إذا كانت هذه آخر فئة في المتجر وتم حذفها، نرجع لصفحة المنتجات العامة
-          router.push(
-            `/store/${id}/products${orderId ? `?orderId=${orderId}` : ""}`,
-          );
-        }
+        const queryParams: Record<string, string> = {
+          id: id,
+        };
+        const params = new URLSearchParams();
+        params.set("id", id);
+        if (fallbackCategoryId) queryParams.categoryId = fallbackCategoryId;
+        if (orderId) queryParams.orderId = orderId;
+
+        const searchParams = new URLSearchParams(queryParams);
+        const url = `/store/details/products/details?${searchParams.toString()}`;
+        router.push(url);
       }
     } catch (error) {
       console.error("حدث خطأ أثناء الحذف:", error);
@@ -248,18 +277,28 @@ export default function Drawer() {
                   (item) => item.category === cat.category,
                 );
 
+                const queryParams: ParsedUrlQueryInput = {
+                  id: id,
+                  categoryId: cat._id,
+                };
+
+                // لا نضيف الـ orderId إلا إذا كان له قيمة حقيقية
+                if (orderId) {
+                  queryParams.orderId = orderId;
+                }
+
                 // 🌟 فحص ما إذا كانت هذه الفئة هي النشطة حالياً في المتصفح
                 const isSelected = String(cat._id) === String(activeCategoryId);
-                const isDeletable = !cat.products || cat.products.length === 0;
+                //  const isDeletable = !cat.products || cat.products.length === 0;
+                //  const canDelete = isCategoryDeletable(cat._id);
 
                 return (
                   <div key={cat._id} className="relative group">
                     <Link
                       href={{
-                        pathname: `/store/${id}/products/${cat._id}`,
-                        query: orderId ? { orderId: orderId } : undefined,
+                         pathname: `/store/details/products/details`,
+                         query: queryParams,
                       }}
-                      // 🌟 تغيير اللون بناءً على حالة التحديد فقط
                       className={`block w-full text-right py-2.5 pl-20 pr-3 rounded-xl transition-all duration-200 ${
                         isSelected
                           ? "bg-amber-500 text-white font-bold"
@@ -289,11 +328,11 @@ export default function Drawer() {
                       <button
                         onClick={(e) => handleDeleteCategory(cat, e)}
                         title={
-                          isDeletable
+                          isCategoryDeletable(cat._id)
                             ? "حذف الفئة"
                             : "لا يمكن الحذف (تحتوي على منتجات)"
                         }
-                        className={`p-1 rounded-md transition ${isDeletable ? "text-white hover:bg-red-800" : "text-red-400/40 cursor-not-allowed"}`}
+                        className={`p-1 rounded-md transition ${isCategoryDeletable(cat._id) ? "text-white hover:bg-red-800" : "text-red-400/40 cursor-not-allowed"}`}
                       >
                         <Trash2 size={14} />
                       </button>

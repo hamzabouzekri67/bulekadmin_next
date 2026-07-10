@@ -9,6 +9,7 @@ import {
 } from "./api/storeHandel";
 import { useUser } from "@/app/context/UserContext";
 import { StoreData } from "@/app/types/store";
+import { useRouter } from "next/navigation";
 
 const tabs = [
   { id: "online", label: "En ligne" },
@@ -22,13 +23,14 @@ export default function ListStore() {
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState("online");
   const [storeData, setStoreData] = useState<StoreData[]>([]);
+  const router = useRouter();
 
   // 1. إضافة حالة لتخزين نص البحث
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     if (!user) return;
-    GetStoreList(user, activeTab, setStoreData);
+    GetStoreList(user, activeTab, setStoreData, router);
   }, [user, activeTab]);
 
   // 2. منطق التصفية (البحث بالاسم أو الرقم)
@@ -261,8 +263,8 @@ export default function ListStore() {
                           /* 🌟 إذا كانت الحالة طبيعية وليست "sent"، يظهر الرابط الفعّال */
                           <Link
                             href={{
-                              pathname: `/store/${v._id}`,
-                              query: { menu: true },
+                              pathname: `/store/details`,
+                              query: { id: v._id, menu: true },
                             }}
                             className="flex items-center gap-1 text-sm font-bold text-red-600 transition-transform duration-200 hover:scale-110 cursor-pointer"
                           >

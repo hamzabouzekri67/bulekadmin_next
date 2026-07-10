@@ -1,0 +1,86 @@
+{
+  "project_info": {
+    "project_number": "760966248764",
+    "project_id": "veni-eats",
+    "storage_bucket": "veni-eats.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:760966248764:android:287bd35d3caa3eff9b4639",
+        "android_client_info": {
+          "package_name": "bulekcapitaine.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_VeVonWBIljGocE9orADCIbhz0JkcCkw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:760966248764:android:1bd6273272a7d2fb9b4639",
+        "android_client_info": {
+          "package_name": "com.example.balekdriver"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_VeVonWBIljGocE9orADCIbhz0JkcCkw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:760966248764:android:7aec32abee342e629b4639",
+        "android_client_info": {
+          "package_name": "com.example.veni_resturant"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_VeVonWBIljGocE9orADCIbhz0JkcCkw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:760966248764:android:a6cfcfc94fa9cbaa9b4639",
+        "android_client_info": {
+          "package_name": "com.example.venieats"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_VeVonWBIljGocE9orADCIbhz0JkcCkw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

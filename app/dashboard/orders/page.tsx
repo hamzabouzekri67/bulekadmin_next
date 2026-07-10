@@ -1,18 +1,47 @@
 "use client";
+import { useRouter } from "next/navigation";
 import MyOrders from "./components/myOrder";
 import NewOrders from "./components/NewOrder";
 import OrderEncours from "./components/OrderEncours";
 import OrderEnRoute from "./components/OrderEnRoute";
 import { useOrderDetails } from "./controller/useOrderController";
-import { Users, Truck, Utensils } from "lucide-react"; // مكتبة أيقونات رائعة
+import { Users, Truck, Utensils, RefreshCw } from "lucide-react";
+import { useState } from "react";
 
 export default function Home() {
-  const { newOrders, myOrders, orderEnCours, orderEnRoute, stats } =
+  const { newOrders, myOrders, orderEnCours, orderEnRoute, stats, refetch } =
     useOrderDetails();
 
+  const [loading, setLoading] = useState(false);
+  const handleRefresh = async () => {
+    setLoading(true);
+    await refetch();
+    setTimeout(() => setLoading(false), 1200);
+  };
+
   return (
-    <div className="p-6 bg-gray-50 min-h-screen font-sans">
-      {/* قسم الإحصائيات بتصميم شبكي (Grid) متجاوب */}
+    <div className="p-6 bg-gray-50 min-h-screen">
+      {/* رأس الصفحة مع زر التحديث */}
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-bold text-gray-800">لوحة التحكم</h1>
+        <button
+          onClick={handleRefresh}
+          className="p-3 bg-white rounded-full shadow-md border border-gray-100 active:scale-95 transition-transform"
+        >
+          <RefreshCw
+            className={loading ? "animate-spin text-red-500" : "text-gray-600"}
+          />
+        </button>
+      </div>
+
+      {/* دائرة التحميل المركزية (Overlay) */}
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
+          <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+
+      {/* قسم الإحصائيات */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <StatCard
           title="إجمالي المستخدمين"
@@ -21,20 +50,21 @@ export default function Home() {
           gradient="from-blue-500 to-blue-700"
         />
         <StatCard
-          title="السائقين النشطين في ولاية"
+          title="السائقين النشطين"
           value={stats.driversCount}
           icon={<Truck size={24} />}
           gradient="from-emerald-500 to-emerald-700"
         />
         <StatCard
-          title="المطاعم المسجلة في ولاية"
+          title="المطاعم المسجلة"
           value={stats.restaurantsCount}
           icon={<Utensils size={24} />}
           gradient="from-orange-500 to-orange-700"
         />
       </div>
 
-      <div className="space-y-8 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      {/* قسم الطلبات */}
+      <div className="space-y-6">
         <NewOrders newOrders={newOrders} />
         <MyOrders myOrders={myOrders} />
         <OrderEncours orderEncours={orderEnCours} />

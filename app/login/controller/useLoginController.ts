@@ -1,12 +1,20 @@
 "use client";
 import { useState } from "react";
-import { isMobile, isAndroid, isIOS, isDesktop ,isTablet} from "react-device-detect";
+import {
+  isMobile,
+  isAndroid,
+  isIOS,
+  isDesktop,
+  isTablet,
+} from "react-device-detect";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const LOGIN_PATH = process.env.NEXT_PUBLIC_LOGIN_PATH;
 
 import { useRouter } from "next/navigation";
 import { getFcmToken } from "../../components/providers";
 import { useUser } from "../../context/UserContext";
+
+import { Preferences } from "@capacitor/preferences";
 
 export function useLoginController() {
   const router = useRouter();
@@ -70,9 +78,13 @@ export function useLoginController() {
         const data = await res.json();
 
         if (data.status === true) {
+        //  localStorage.setItem("token", data.result.token);
+          await Preferences.set({
+            key: "token",
+            value: data.result.token,
+          });
           setUser(data.result);
-          router.push("./dashboard");
-          console.log(data);
+          router.push("/dashboard");
           return;
         }
 

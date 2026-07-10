@@ -19,6 +19,7 @@ import {
 } from "./api/api_featured";
 import { StoreData } from "@/app/types/store";
 import { Product } from "@/app/types/Orders";
+import { useRouter } from "next/navigation";
 
 export default function FeaturedPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,6 +41,8 @@ export default function FeaturedPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const todayStr = new Date().toISOString().split("T")[0];
+
+  const router = useRouter();
 
   // 🔄 دالة مطورة لحساب الوقت المتبقي بناءً على تاريخ السيرفر الممرر
   const getRemainingDays = (
@@ -68,13 +71,14 @@ export default function FeaturedPage() {
     }
   };
 
-  // 1. جلب المتاجر من السيرفر
   useEffect(() => {
     const fetchStores = async () => {
       setLoadingStores(true);
       try {
-        const data = await searchandFindStore(searchQuery);
-        setStores(data);
+        const data = await searchandFindStore(searchQuery, router);
+        if (!!data) {
+          setStores(data);
+        }
       } catch (error) {
         console.error("Error fetching stores:", error);
       } finally {

@@ -19,7 +19,7 @@ export default function newOrders({newOrders}:NewOrdersProps){
     ) : (
       <div className="flex justify-between px-2 pt-2">
         
-        <Link href='orders/Detailes'>
+        <Link href='/dashboard/orders/pickOrders'>
 
           <p className="mb-2 font-semibold text-gray-700">
           Vous avez {newOrders.length} nouvelle{newOrders.length > 1 ? "s" : ""} commande{newOrders.length > 1 ? "s" : ""}

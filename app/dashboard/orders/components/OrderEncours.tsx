@@ -64,7 +64,7 @@ export default function OrderEncours({ orderEncours }: NewOrdersProps) {
 
 
               <Link
-                href={`/dashboard/orders/${order.id}`}
+                href={`/dashboard/orders/details?id=${order.id}`}
                 className="text-blue-600 hover:underline text-md"
               >
                 Voir

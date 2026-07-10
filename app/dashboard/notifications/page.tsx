@@ -24,7 +24,6 @@ const NotificationDashboard = () => {
       "كل أنواع الماكلة اللي راهي في تطبيق واحد! 📱 ادخل لـ Bulek Eats واكتشف أطباق جديدة تفتح الشهية! 🛵🔥",
   });
 
-  // حالة الإرسال والتنبيهات
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<{
     type: "success" | "error" | "warning" | null;
@@ -57,7 +56,7 @@ const NotificationDashboard = () => {
   }, [user]);
 
   const handleSendNotification = async () => {
-    // 1. الحماية من الحقول الفارغة
+
     if (!formData.title.trim() || !formData.message.trim()) {
       setStatus({
         type: "error",

@@ -1,13 +1,26 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-   images: {
-    domains: [
-      "api.bulekeats.com",
-      "127.0.0.1"
+  output: "export",
+  images: {
+    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "api.bulekeats.com",
+      },
+      {
+        protocol: "http",
+        hostname: "127.0.0.1",
+      },
+
+      {
+        protocol: "http",
+        hostname: "192.168.1.35",
+      },
     ],
   },
-  /* config options here */
+  trailingSlash: false
 };
 
 export default nextConfig;

@@ -1,8 +1,8 @@
 // app/dashboard/[id]/layout.tsx
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
 import Drawer from "./components/Drawer";
 import { CategoryProvider } from "@/app/context/CategoryContext";
 import { ChevronRight, ChevronLeft, Check } from "lucide-react";
@@ -23,13 +23,26 @@ interface WeeklyHours {
   [key: string]: DaySchedule;
 }
 
+// export default function Page() {
+//   return (
+//     <Suspense fallback={<div>Loading...</div>}>
+//       <DashboardLayout>
+//         <div className="p-6"></div>
+//       </DashboardLayout>
+//     </Suspense>
+//   );
+// }
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { id } = useParams();
-  const router = useRouter();
+  // const { id } = useParams();
+
+  // const router = useRouter();
+
+  // console.log(id);
 
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,12 +72,15 @@ export default function DashboardLayout({
     lng: number;
   } | null>(null);
 
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
   useEffect(() => {
     if (!id) return;
 
     const getStoreStatus = async () => {
       try {
         const data = await checkStatusStore(id);
+        console.log(data);
         if (data && data.status === true && data.result) {
           setStatus(data.result.status);
         } else {
@@ -251,9 +267,9 @@ export default function DashboardLayout({
   return (
     <CategoryProvider>
       <Drawer />
-      <main className="ml-0 md:ml-64 pt-16 md:pt-6 h-screen overflow-auto">
-        {children}
-      </main>
+      <Suspense fallback={<div className="p-4">جاري تحميل القائمة...</div>}>
+        <main>{children}</main>
+      </Suspense>
     </CategoryProvider>
   );
 }

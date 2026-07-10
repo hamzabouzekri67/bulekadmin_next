@@ -5,6 +5,7 @@ import { searchandFindStore } from "../featured/api/api_featured";
 import { StoreData } from "@/app/types/store";
 import { getDocStore, saveDocStore } from "./api/handle_offers";
 import { useUser } from "@/app/context/UserContext";
+import { useRouter } from "next/navigation";
 
 export default function OffersPage() {
   const { user } = useUser();
@@ -28,13 +29,17 @@ export default function OffersPage() {
   const [deliveryPlatShare, setDeliveryPlatShare] = useState(0);
   const [maxFreeDeliveryDistance, setMaxFreeDeliveryDistance] = useState("");
 
+  const router = useRouter();
+
   useEffect(() => {
     if (!user) return;
     const fetchStores = async () => {
       try {
         setLoadingRestaurants(true);
-        const data = await searchandFindStore(searchQuery);
-        setStores(data);
+        const data = await searchandFindStore(searchQuery, router);
+        if (!!data) {
+          setStores(data);
+        }
       } catch (error) {
         console.error("Error fetching stores:", error);
       } finally {

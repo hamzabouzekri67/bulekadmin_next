@@ -7,6 +7,7 @@ import { Order } from "../../../types/Orders";
 import { useOrders } from "../../../context/UserOrdersContext";
 import { useSocket } from "../../../hooks/useSocket";
 import { useRouter } from "next/navigation";
+import { Preferences } from "@capacitor/preferences";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const FETCH_ORDER = process.env.NEXT_PUBLIC_FETCH_ORDER;
@@ -33,6 +34,20 @@ export function useOrderDetails() {
     driversCount: 0,
     restaurantsCount: 0,
   });
+
+  const loadData = async () => {
+    if (!user) return;
+    await fetchOrders(
+      url,
+      user,
+      setNewOrders,
+      setmyOrders,
+      setOrderEnCours,
+      setOrderEnRoute,
+      router,
+      setStats,
+    );
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -91,18 +106,12 @@ export function useOrderDetails() {
       });
     }
 
-    if (didFetch.current) return;
-    didFetch.current = true;
-    fetchOrders(
-      url,
-      user,
-      setNewOrders,
-      setmyOrders,
-      setOrderEnCours,
-      setOrderEnRoute,
-      router,
-      setStats,
-    );
+  //  if (didFetch.current) return;
+  //  didFetch.current = true;
+    if (!didFetch.current) {
+      didFetch.current = true;
+      loadData();
+    }
   }, [ready, setNewOrders, socket, url, user]);
   return {
     newOrders,
@@ -110,6 +119,7 @@ export function useOrderDetails() {
     orderEnCours,
     orderEnRoute,
     stats,
+    refetch: loadData,
   };
 }
 
@@ -135,8 +145,8 @@ const fetchOrders = async (
   console.log(orders);
 
   if (orders.message === "Invalid Token") {
-    //setUser(null);
-    router.push("/login");
+    localStorage.removeItem("token");
+    // router.replace("/login");
     return;
   }
 
@@ -172,10 +182,15 @@ const fetchOrders = async (
 
 export async function GET(url: string, user: User) {
   try {
+    const { value: token } = await Preferences.get({ key: "token" });
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      // credentials: "include",
+
       body: JSON.stringify({ ville: user?.ville, id: user?.id }),
     });
     if (res.ok) {

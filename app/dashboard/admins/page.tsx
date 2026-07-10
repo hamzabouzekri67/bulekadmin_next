@@ -34,7 +34,7 @@ const AdminsPage = () => {
       router.replace("/dashboard");
     } else {
       setIsAuthorized(true);
-      GetAdminsList(user, activeTab, setAdminData);
+      GetAdminsList(user, activeTab, setAdminData,router);
     }
   }, [user, activeTab, router, authLoading]);
 
@@ -136,7 +136,7 @@ const AdminsPage = () => {
                 </p>
               </div>
 
-              <Link href={`/dashboard/admins/${admin.id}`}>
+              <Link href={`/dashboard/admins/details?id=${admin.id}`}>
                 <button className="flex items-center gap-2 bg-gray-50 text-black px-4 py-2 rounded-lg hover:bg-black hover:text-white transition-all text-xs font-bold uppercase">
                   <Eye size={14} />
                   Détails

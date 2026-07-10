@@ -1,17 +1,27 @@
+import { Preferences } from "@capacitor/preferences";
+import { useRouter } from "next/navigation";
+
 const GET_STORE_DOC = process.env.NEXT_PUBLIC_GET_STORE_DOC;
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const SAVE_STORE_DOC = process.env.NEXT_PUBLIC_SAVE_STORE_DOC;
 
 export async function getDocStore(selectedRestaurantId: string) {
   const url = `${API_URL}${GET_STORE_DOC}/${selectedRestaurantId}`;
+  const { value: token } = await Preferences.get({ key: "token" });
 
   const res = await fetch(url, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     credentials: "include",
   });
   if (res.ok) {
     const detailes = await res.json();
+
+  //  console.log(detailes);
+
     if (detailes.status) {
       return detailes.result;
     } else {
@@ -22,6 +32,7 @@ export async function getDocStore(selectedRestaurantId: string) {
 
 export async function saveDocStore(
   selectedRestaurantId: string,
+
   payload: {
     deliverySettings: {
       hasFreeDeliveryThreshold: boolean;
@@ -39,15 +50,20 @@ export async function saveDocStore(
   },
 ) {
   const url = `${API_URL}${SAVE_STORE_DOC}/${selectedRestaurantId}/offers`;
+  const { value: token } = await Preferences.get({ key: "token" });
 
   const res = await fetch(url, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    //  credentials: "include",
     body: JSON.stringify(payload),
   });
   if (res.ok) {
     const detailes = await res.json();
+
     if (detailes.status) {
       return detailes.result;
     } else {

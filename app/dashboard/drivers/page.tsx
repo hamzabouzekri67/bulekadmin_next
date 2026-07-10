@@ -21,6 +21,7 @@ import { GetDriverList, handelAccountDriver } from "./api/GetListDriver";
 import { useUser } from "@/app/context/UserContext";
 import { DriverData, DriverStatus } from "@/app/types/Drivers";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const tabs = [
   { id: "online", label: "En ligne" },
@@ -34,10 +35,12 @@ const VehiclesPage = () => {
   const [activeTab, setActiveTab] = useState("online");
   const [driverData, setDriverData] = useState<DriverData[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter()
+
 
   useEffect(() => {
     if (!user) return;
-    GetDriverList(user, activeTab, setDriverData);
+    GetDriverList(user, activeTab, setDriverData,router);
   }, [user, activeTab]);
 
   // تصفية البحث محلياً
@@ -257,7 +260,7 @@ const VehiclesPage = () => {
                     <div className="flex justify-end gap-2">
                       {/* زر المراجعة يظهر للجميع إذا كانت الحالة sent */}
                       {v.status === "sent" && (
-                        <Link href={`/dashboard/drivers/review/${v._id}`}>
+                        <Link href={`/dashboard/drivers/review/details?id=${v._id}`}>
                           <button className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-700 transition-all shadow-md active:scale-95">
                             <FileText size={14} />
                             Réviser
@@ -269,7 +272,7 @@ const VehiclesPage = () => {
                       {v.status !== "sent" &&
                         (user?.role === "admin" ||
                           user?.role === "super_admin") && (
-                          <Link href={`/dashboard/drivers/${v._id}`}>
+                          <Link href={`/dashboard/drivers/details?id=${v._id}`}>
                             <button className="inline-flex items-center gap-2 bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-red-600 transition-all shadow-sm active:scale-95">
                               <Eye size={14} />
                               Détails

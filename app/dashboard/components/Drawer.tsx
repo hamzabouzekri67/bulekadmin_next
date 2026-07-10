@@ -17,6 +17,7 @@ import {
   Percent, // استيراد الأيقونة الخاصة بالمطاعم والعروض المميزة
 } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { Preferences } from "@capacitor/preferences";
 
 export default function Drawer() {
   const [open, setOpen] = useState(false);
@@ -27,6 +28,23 @@ export default function Drawer() {
   const router = useRouter();
 
   useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { value: token } = await Preferences.get({ key: "token" });
+
+        console.log("Token retrieved:", token);
+
+        if (!token) {
+          console.log("No token found, logging out...");
+          await handleLogout();
+        }
+      } catch (error) {
+        console.error("Error checking auth:", error);
+        await handleLogout();
+      }
+    };
+
+    checkAuth();
     setMounted(true);
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
@@ -36,17 +54,26 @@ export default function Drawer() {
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [pathname, router]);
 
-  // دالة التعامل مع تسجيل الخروج
   const handleLogout = async () => {
     try {
-      if (logout) {
-        await logout();
-        router.push("/login"); // التوجيه لصفحة تسجيل الدخول
-      }
+      // 1. حذف التوكن من التخزين الدائم (سيعمل في الويب والأندرويد)
+      await Preferences.remove({ key: "token" });
+
+      // 2. تنظيف أي بيانات مستخدم أخرى إذا كنت تخزنها
+     // await Preferences.remove({ key: "user_data" });
+
+      // 3. (اختياري) مسح الـ LocalStorage القديم إذا كنت ما زلت تستخدمه للنسخ الاحتياطية
+      localStorage.clear();
+
+      // 4. إعادة توجيه المستخدم لصفحة تسجيل الدخول
+      router.replace("/login");
+
+      // 5. إعادة تحميل الصفحة لضمان تنظيف حالة التطبيق (State)
+      window.location.reload();
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error("Error during logout:", error);
     }
   };
 
@@ -68,7 +95,7 @@ export default function Drawer() {
 
   if (user?.role === "super_admin" || user?.role === "admin") {
     links.push({
-      href: "/dashboard/offers", 
+      href: "/dashboard/offers",
       label: "Offres & Livraisons",
       icon: <Percent size={20} />,
     });

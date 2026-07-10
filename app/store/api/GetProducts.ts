@@ -1,4 +1,5 @@
 import { Category, Order } from "@/app/types/Orders";
+import { Preferences } from "@capacitor/preferences";
 import { ParamValue } from "next/dist/server/request/params";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -14,10 +15,14 @@ const GET_TAGS = process.env.NEXT_PUBLIC_GET_TAGS;
 export async function checkStatusStore(id: string | string[]) {
   try {
     const url = `${API_URL}${CHECK_STATUS_STORE}`;
+    const { value: token } = await Preferences.get({ key: "token" });
 
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       credentials: "include",
       body: JSON.stringify({
         id: id,
@@ -40,12 +45,13 @@ export async function compeletedProfileStore(dataToSend: FormData) {
     console.log(dataToSend);
 
     const url = `${API_URL}${COMPELETED_STORE_PROFILE}`;
+    const { value: token } = await Preferences.get({ key: "token" });
 
     const res = await fetch(url, {
       method: "POST",
-      headers: {},
+      headers: { Authorization: `Bearer ${token}` },
       // headers: { "Content-Type": "application/json" },
-      credentials: "include",
+      //credentials: "include",
       body: dataToSend,
     });
 
@@ -68,23 +74,25 @@ export async function GetProducts(
 ) {
   try {
     const url = `${API_URL}${FETCH_MENU_STORE}`;
+    const { value: token } = await Preferences.get({ key: "token" });
 
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      // credentials: "include",
       body: JSON.stringify({ storeId: storeId, orderId: orderId }),
     });
 
     if (res.ok) {
       const data = await res.json();
-      //console.log(data.result.order);
+
       if (data.result.products.category) {
         setCategory(data.result.products.category);
       }
       if (data.result.order) {
-        //console.log(data.result.order);
-
         setOrder(data.result.order);
       }
 
@@ -104,10 +112,14 @@ export async function addCatg(
 ) {
   try {
     const url = `${API_URL}${ADD_CATG}`;
+    const { value: token } = await Preferences.get({ key: "token" });
 
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       credentials: "include",
       body: JSON.stringify({
         id: id,
@@ -136,10 +148,14 @@ export async function updateCatg(
 ) {
   try {
     const url = `${API_URL}${UPDATE_CATG}`;
+    const { value: token } = await Preferences.get({ key: "token" });
 
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       credentials: "include",
       body: JSON.stringify({
         id: id,
@@ -164,10 +180,14 @@ export async function updateCatg(
 export async function deleteCatg(editingCategoryId: string) {
   try {
     const url = `${API_URL}${DELETED_CATG}`;
+    const { value: token } = await Preferences.get({ key: "token" });
 
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       credentials: "include",
       body: JSON.stringify({
         ctgId: editingCategoryId,
@@ -188,10 +208,14 @@ export async function deleteCatg(editingCategoryId: string) {
 export async function getTags() {
   try {
     const url = `${API_URL}${GET_TAGS}`;
+    const { value: token } = await Preferences.get({ key: "token" });
 
     const res = await fetch(url, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       credentials: "include",
     });
 

@@ -15,6 +15,7 @@ import {
   isDesktop,
   isTablet,
 } from "react-device-detect";
+import { Preferences } from "@capacitor/preferences";
 
 export type User = {
   id: string;
@@ -51,6 +52,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     try {
       setLoading(true);
       const url = `${API_URL}${LOGIN_CHECK}`;
+      const { value: token } = await Preferences.get({ key: "token" });
       const tokenFcm = await getFcmToken();
 
       let deviceType = "web"; // القيمة الافتراضية للكمبيوتر
@@ -62,25 +64,36 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           deviceType = "ios";
         }
       } else if (isDesktop) {
-        deviceType = "web"; // أو يمكنك تسميته "desktop" إذا أردت
+        deviceType = "web"; 
       }
 
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+       // credentials: "include",
         body: JSON.stringify({ tokenFcm: tokenFcm, deviceType: deviceType }),
       });
 
       if (res.ok) {
         const data = await res.json();
+
+        console.log(data);
         if (!data.status) {
+        //  localStorage.removeItem("token");
+         // router.replace("/login");
           setUser(null);
+
           return;
         }
         setUser(data.result);
       } else {
         setUser(null);
+       // localStorage.removeItem("token");
+       // router.replace("/login");
+        //  window.location.href = "/login";
       }
     } catch (err) {
       setUser(null);
