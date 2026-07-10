@@ -39,6 +39,7 @@ export async function AcceptedOrders(
 
     const res = await fetch(url, {
       method: "POST",
+      referrerPolicy: "no-referrer",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${orders.tmpToken || ""}`,
@@ -47,7 +48,7 @@ export async function AcceptedOrders(
       body: JSON.stringify(detailesOrder),
     });
 
-    // //console.log(res);
+    console.log(res);
 
     if (res.ok) {
       const data = await res.json();
@@ -65,12 +66,12 @@ export async function AcceptedOrders(
 
         return;
       } else {
-        //console.log("لم يتم العثور على orderId في المسار data.result.result");
+        console.log("لم يتم العثور على orderId في المسار data.result.result");
       }
     }
     //     return null
   } catch (error) {
-    //console.log(error);
+    console.log(error);
     return null;
   }
 }
