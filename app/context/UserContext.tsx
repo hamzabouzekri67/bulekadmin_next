@@ -41,7 +41,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const LOGIN_CHECK = process.env.NEXT_PUBLIC_LOGIN_CHECK;
-const LOGOUT_API = "/auth/logout"; // افترضت هذا المسار، قم بتغييره حسب الـ API لديك
+const LOGOUT_API = "/auth/logout"; 
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -55,7 +55,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       const { value: token } = await Preferences.get({ key: "token" });
       const tokenFcm = await getFcmToken();
 
-      let deviceType = "web"; // القيمة الافتراضية للكمبيوتر
+      let deviceType = "web"; 
 
       if (isMobile || isTablet) {
         if (isAndroid) {
@@ -67,6 +67,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         deviceType = "web"; 
       }
 
+     
+      
+
       const res = await fetch(url, {
         method: "POST",
         headers: {
@@ -76,6 +79,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
        // credentials: "include",
         body: JSON.stringify({ tokenFcm: tokenFcm, deviceType: deviceType }),
       });
+
+       console.log("test",res);
 
       if (res.ok) {
         const data = await res.json();
@@ -96,6 +101,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         //  window.location.href = "/login";
       }
     } catch (err) {
+      console.log(err);
+      
       setUser(null);
     } finally {
       setLoading(false);

@@ -4,29 +4,31 @@ import { getToken } from "firebase/messaging";
 import { getClientMessaging } from "@/firebase/firebase";
 import { Capacitor } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
+import { FirebaseMessaging } from "@capacitor-firebase/messaging"; // استيراد الحزمة الرسمية للهواتف
 
 // دالة موحدة لجلب التوكن
 export async function getFcmToken(): Promise<string> {
   try {
-    // 1. إذا كان التطبيق يعمل على أندرويد
-    if (Capacitor.getPlatform() === "android") {
-      // التأكد من الصلاحية والتسجيل
-      const result = await PushNotifications.requestPermissions();
-      if (result.receive !== "granted") return "";
+    // 1. إذا كان التطبيق يعمل على الهاتف (iOS / Android)
+    if (Capacitor.isNativePlatform()) {
+      // التأكد من الصلاحية
+      let permStatus = await PushNotifications.checkPermissions();
+      if (permStatus.receive === "prompt") {
+        permStatus = await PushNotifications.requestPermissions();
+      }
 
-      await PushNotifications.register();
+      if (permStatus.receive !== "granted") {
+        console.warn("Push notification permissions not granted!");
+        return "";
+      }
 
-      // انتظر حتى يتم الحصول على التوكن
-      return new Promise((resolve) => {
-        PushNotifications.addListener("registration", (token) => {
-          console.log(token);
-          
-          resolve(token.value);
-        });
-      });
+      // جلب الـ FCM Token الحقيقي مباشرة من حزمة فايربيس الخاصة بكاباسيتور
+      const result = await FirebaseMessaging.getToken();
+      console.log(">>> REAL FCM Token received:", result.token);
+      return result.token ?? "";
     }
 
-    // 2. إذا كان التطبيق يعمل على الويب
+    // 2. إذا كان التطبيق يعمل على المتصفح (Web)
     const messaging = await getClientMessaging();
     if (!messaging || Notification.permission !== "granted") return "";
 
@@ -43,8 +45,8 @@ export async function getFcmToken(): Promise<string> {
 
 // دالة طلب الإذن الموحدة
 export async function requestNotificationPermission(): Promise<boolean> {
-  // أندرويد
-  if (Capacitor.getPlatform() === "android") {
+  // الهواتف (Native)
+  if (Capacitor.isNativePlatform()) {
     const status = await PushNotifications.requestPermissions();
     return status.receive === "granted";
   }

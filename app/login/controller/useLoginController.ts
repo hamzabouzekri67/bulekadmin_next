@@ -62,6 +62,11 @@ export function useLoginController() {
         deviceType = "web"; // أو يمكنك تسميته "desktop" إذا أردت
       }
 
+
+      console.log("TEST 67",deviceType);
+      console.log("TEST 68",tokenFcm);
+      
+
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -76,6 +81,8 @@ export function useLoginController() {
 
       if (res.ok) {
         const data = await res.json();
+
+       // console.error("data in Client:", data);
 
         if (data.status === true) {
         //  localStorage.setItem("token", data.result.token);
