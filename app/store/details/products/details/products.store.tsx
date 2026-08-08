@@ -428,7 +428,7 @@ export function ProductsStore() {
     );
   };
   return (
-    <div className="max-w-4xl mx-auto p-3 md:p-4" dir="rtl">
+    <div className="max-w-4xl mx-auto p-3 md:p-4 pb-32" dir="rtl">
       {/* زر إضافة منتج */}
       {order?.id === undefined && (
         <div className="mb-4 md:mb-6 flex justify-end">
@@ -512,6 +512,7 @@ export function ProductsStore() {
 
               {/* التحكم */}
               {!!orderId ? (
+                
                 <div className="flex justify-center items-center shrink-0">
                   <QuantitySelector
                     order={order}

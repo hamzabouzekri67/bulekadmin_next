@@ -4,12 +4,12 @@ import { getToken } from "firebase/messaging";
 import { getClientMessaging } from "@/firebase/firebase";
 import { Capacitor } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
-import { FirebaseMessaging } from "@capacitor-firebase/messaging"; // استيراد الحزمة الرسمية للهواتف
+import { FirebaseMessaging } from "@capacitor-firebase/messaging"; 
 
 // دالة موحدة لجلب التوكن
 export async function getFcmToken(): Promise<string> {
   try {
-    // 1. إذا كان التطبيق يعمل على الهاتف (iOS / Android)
+    // 1. إذا كان التطبيق يعمل على الهاتف (iOS / Android) 
     if (Capacitor.isNativePlatform()) {
       // التأكد من الصلاحية
       let permStatus = await PushNotifications.checkPermissions();

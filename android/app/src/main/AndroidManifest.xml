@@ -31,6 +31,16 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- إجبار فايربيس على استخدام قناتك المخصصة -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="bulek_orders_channel" />
+            
+        <!-- إجبار فايربيس على استخدام ملف الصوت الخاص بك -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_sound"
+            android:value="@raw/notfications" />
     </application>
 
     <!-- Permissions -->

@@ -144,17 +144,20 @@ export function QuantitySelector({
   }, [order, product.supplements]);
 
   // 5. إغلاق القائمة عند الضغط خارجها
-  useEffect(() => {
+ useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        if (isOpen) setOpenedProductId(null);
+        if (isOpen) {
+          // استبدل setOpenedProductId(null) بـ handleCloseBottomSheet لضمان الرجوع للقيمة الأصلية
+          handleCloseBottomSheet();
+        }
       }
     }
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, setOpenedProductId]);
+  }, [isOpen, defaultSupplementQty, defaultQuantity, defaultChooseList]);
 
   const handleOuterClick = (isMinus: boolean) => {
     if (isMinus) {
@@ -305,20 +308,30 @@ export function QuantitySelector({
     }
   };
 
-  const handleCloseBottomSheet = () => {
+const handleCloseBottomSheet = () => {
+    // إعادة كل المتغيرات إلى قيمتها الاحتياطية الأصلية قبل الفتح
     setSupplementQty(defaultSupplementQty);
-    setQuantity(defaultQuantity);
+    setQuantity(defaultQuantity); // <-- هذا السطر يرجع الرقم تماماً لما كان عليه في السلة
     setChooseList(JSON.parse(JSON.stringify(defaultChooseList)));
+    
+    // حساب السعر الإجمالي القديم بناءً على القيمة الأصلية
+    const supplementsPrice = defaultChooseList.reduce(
+      (sum, sup) => sum + Number(sup.price) * (sup.qty || 0),
+      0,
+    );
+    setshowTotal(product.total * defaultQuantity + supplementsPrice);
+
+    // إغلاق القائمة
     setOpenedProductId(null);
   };
 
   return (
     <div className="flex items-center gap-1.5 bg-gray-200 rounded-full p-1 w-[105px] justify-between shadow-inner shrink-0">
       <button
-        onClick={() => handleOuterClick(true)}
+        onClick={() => handleOuterClick(false)}
         className={`p-1 rounded-full transition-all active:scale-95 ${
           quantity > 0
-            ? "bg-white text-orange-600 shadow-sm"
+            ? "bg-white text-red-600 shadow-sm"
             : "text-gray-400 cursor-not-allowed"
         }`}
         disabled={quantity === 0}
@@ -332,7 +345,7 @@ export function QuantitySelector({
 
       <button
         onClick={() => handleOuterClick(false)}
-        className="p-1 rounded-full bg-orange-500 text-white shadow-sm hover:bg-orange-600 transition-all active:scale-90"
+        className="p-1 rounded-full bg-red-500 text-white shadow-sm hover:bg-red-600 transition-all active:scale-90"
       >
         <Plus size={15} strokeWidth={3} />
       </button>
@@ -370,7 +383,7 @@ export function QuantitySelector({
                 <h2 className="text-sm font-black text-gray-800 line-clamp-1 break-all">
                   {category.category} / {product.title}
                 </h2>
-                <h2 className="text-sm font-bold text-orange-600 mt-0.5">
+                <h2 className="text-sm font-bold text-red-600 mt-0.5">
                   {product.price} {product.currency}
                 </h2>
               </div>
@@ -380,7 +393,7 @@ export function QuantitySelector({
                   onClick={() => handleUpdate(quantity - 1, true)}
                   className={`p-1.5 rounded-full transition-all ${
                     quantity > 0
-                      ? "bg-white text-orange-600 shadow-sm"
+                      ? "bg-white text-red-600 shadow-sm"
                       : "text-gray-400 cursor-not-allowed"
                   }`}
                 >
@@ -393,7 +406,7 @@ export function QuantitySelector({
 
                 <button
                   onClick={() => handleUpdate(quantity + 1, false)}
-                  className="p-1.5 rounded-full bg-orange-500 text-white shadow-md hover:bg-orange-600 transition-all active:scale-90"
+                  className="p-1.5 rounded-full bg-red-500 text-white shadow-md hover:bg-red-600 transition-all active:scale-90"
                 >
                   <Plus size={15} strokeWidth={3} />
                 </button>
@@ -432,7 +445,7 @@ export function QuantitySelector({
                             <p className="font-bold text-sm text-gray-800 line-clamp-1">
                               {item.name}
                             </p>
-                            <span className="text-xs font-bold text-orange-600">
+                            <span className="text-xs font-bold text-red-600">
                               {Number(item.plusPrice) > 0
                                 ? `+${item.plusPrice} ${product.currency}`
                                 : "مجاني"}
@@ -457,7 +470,7 @@ export function QuantitySelector({
                               onClick={() =>
                                 increaseSupplement(item, sup.chose)
                               }
-                              className="w-7 h-7 flex items-center justify-center rounded-full bg-orange-500 text-white font-bold active:scale-90 transition-transform"
+                              className="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 text-white font-bold active:scale-90 transition-transform"
                             >
                               +
                             </button>
@@ -492,7 +505,7 @@ export function QuantitySelector({
                 }
                 className={`w-full font-black py-3 rounded-xl shadow-md transition-all text-sm ${
                   isRequis
-                    ? "bg-orange-500 hover:bg-orange-600 text-white"
+                    ? "bg-red-500 hover:bg-red-600 text-white"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
                 }`}
               >
@@ -541,12 +554,13 @@ export function FloatingCart({ cartItems, order }: FloatingCartProps) {
 
   return (
     <>
-      <div className="fixed bottom-4 left-0 right-0 mx-auto w-[92%] max-w-md z-[90] pb-safe">
-        <div className="bg-gray-900 text-white p-3 rounded-2xl shadow-2xl flex justify-between items-center backdrop-blur-md bg-opacity-95">
+      {/* شريط السلة العائم مع ترك مسافة آمنة للشاشات */}
+      <div className="fixed bottom-4 left-0 right-0 mx-auto w-[92%] max-w-md z-[90] pb-safe pointer-events-auto">
+        <div className="bg-gray-900 text-white p-3 rounded-2xl shadow-2xl flex justify-between items-center backdrop-blur-md bg-opacity-95 border border-gray-800">
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="relative bg-orange-600 p-2.5 rounded-xl shrink-0">
+            <div className="relative bg-red-600 p-2.5 rounded-xl shrink-0">
               <ShoppingBag size={18} />
-              <span className="absolute -top-1.5 -right-1.5 bg-white text-orange-600 text-[10px] font-black rounded-full min-w-4 h-4 px-1 flex items-center justify-center shadow-sm">
+              <span className="absolute -top-1.5 -right-1.5 bg-white text-red-600 text-[10px] font-black rounded-full min-w-4 h-4 px-1 flex items-center justify-center shadow-sm">
                 {totalItems}
               </span>
             </div>
@@ -554,7 +568,7 @@ export function FloatingCart({ cartItems, order }: FloatingCartProps) {
               <p className="text-[9px] uppercase opacity-55 font-black tracking-wider">
                 إجمالي الطلب
               </p>
-              <p className="font-black text-base text-orange-400 truncate">
+              <p className="font-black text-base text-red-400 truncate">
                 {totalPrice.toLocaleString()} DZD
               </p>
             </div>
@@ -562,20 +576,21 @@ export function FloatingCart({ cartItems, order }: FloatingCartProps) {
 
           <button
             onClick={() => setOpen(true)}
-            className="bg-orange-500 hover:bg-orange-600 px-[18px] py-2.5 rounded-xl font-black text-xs shadow-lg transition-all active:scale-95 shrink-0"
+            className="bg-red-500 hover:bg-red-600 px-[18px] py-2.5 rounded-xl font-black text-xs shadow-lg transition-all active:scale-95 shrink-0"
           >
             عرض السلة
           </button>
         </div>
       </div>
 
+      {/* نافذة تفاصيل السلة المنبثقة (Modal) */}
       {open && (
         <div className="fixed inset-0 z-[110] flex items-end justify-center">
           <div
             onClick={() => setOpen(false)}
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
           />
-          <div className="relative w-full max-w-md bg-white rounded-t-3xl p-4 flex flex-col max-h-[82vh] pb-safe">
+          <div className="relative w-full max-w-md bg-white rounded-t-3xl p-4 flex flex-col max-h-[82vh] pb-safe shadow-2xl z-10">
             <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-2 shrink-0" />
 
             <div className="flex justify-between items-center pb-3 border-b shrink-0">
@@ -601,7 +616,7 @@ export function FloatingCart({ cartItems, order }: FloatingCartProps) {
                     <div className="flex justify-between gap-4 font-black text-sm text-gray-800">
                       <span className="flex-1 text-right line-clamp-1 min-w-0">
                         {item.title}{" "}
-                        <span className="text-orange-500">
+                        <span className="text-red-500">
                           × {item.qentity}
                         </span>
                       </span>
@@ -611,7 +626,7 @@ export function FloatingCart({ cartItems, order }: FloatingCartProps) {
                     </div>
 
                     {sups.length > 0 && (
-                      <div className="mt-2 pr-2 border-r-2 border-orange-200 space-y-1 text-xs text-gray-600 text-right">
+                      <div className="mt-2 pr-2 border-r-2 border-red-200 space-y-1 text-xs text-gray-600 text-right">
                         {sups.map((sup, i) => {
                           const lineTotal = Number(sup.price) * (sup.qty || 0);
                           return (
@@ -641,7 +656,7 @@ export function FloatingCart({ cartItems, order }: FloatingCartProps) {
             <div className="pt-3 border-t bg-white shrink-0 space-y-3">
               <div className="flex justify-between font-black text-base text-gray-900 px-1">
                 <span>المجموع الإجمالي</span>
-                <span className="text-orange-600">
+                <span className="text-red-600">
                   {totalPrice.toLocaleString()} DZD
                 </span>
               </div>
@@ -654,7 +669,7 @@ export function FloatingCart({ cartItems, order }: FloatingCartProps) {
                     router,
                   })
                 }
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3.5 rounded-xl font-black text-sm shadow-md transition-all active:scale-[0.98]"
+                className="w-full bg-red-500 hover:bg-red-600 text-white py-3.5 rounded-xl font-black text-sm shadow-md transition-all active:scale-[0.98]"
               >
                 تأكيد الطلب
               </button>
