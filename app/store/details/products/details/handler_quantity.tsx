@@ -1,7 +1,6 @@
 import { CartItem, useCategories } from "@/app/context/CategoryContext";
 import {
   Category,
-  ListOrder,
   Order,
   Product,
   SuplementChoice,
@@ -46,7 +45,7 @@ export function QuantitySelector({
   const [supplementQty, setSupplementQty] = useState<Record<string, number>>(
     {},
   );
-  const hasInitRef = useRef(false);
+  const hasInitRef = useRef<Record<string, boolean>>({});
   const [isRequis, setIsRequis] = useState(false);
   const [defaultSupplementQty, setDefaultSupplementQty] = useState<
     Record<string, number>
@@ -93,6 +92,8 @@ export function QuantitySelector({
   // 3. معالجة فتح القائمة وحفظ النسخة الاحتياطية (Backup)
   useEffect(() => {
     if (isOpen) {
+      console.log("supplementQty", supplementQty);
+
       setDefaultSupplementQty({ ...supplementQty });
       setDefaultQuantity(quantity);
       setDefaultChooseList(JSON.parse(JSON.stringify(chooseList)));
@@ -112,43 +113,87 @@ export function QuantitySelector({
   }, [isOpen]);
 
   // 4. جلب الإضافات من الطلب الأصلي القديم (مرة واحدة فقط عند التأسيس)
+
+  // دالة واحدة شاملة لفتح القائمة وجلب البيانات (سواء من السلة أو من الطلب القديم)
   useEffect(() => {
-    if (hasInitRef.current || !order || !product.supplements.length) return;
+    if (isOpen) {
+      const currentQty = initialQuantity;
+      setQuantity(currentQty);
 
-    const qtyInit: Record<string, number> = {};
-    product.supplements.forEach((sup) => {
-      const related =
-        order?.listOrder?.filter((o) =>
-          o.listSuplement?.some((c) =>
-            sup.data.some((item) => item._id.toString() === c._id.toString()),
-          ),
-        ) || [];
+      let currentChooseList: SuplementChoice[] = [];
 
-      sup.data.forEach((item: SupplementItem) => {
-        const foundOrder = related.find((o: ListOrder) =>
-          o.listSuplement?.some(
-            (c) => c._id.toString() === item._id.toString(),
-          ),
+      // 1. محاولة الجلب من السلة أولاً
+      if (
+        listProducts?.listSuplement &&
+        listProducts.listSuplement.length > 0
+      ) {
+        currentChooseList = JSON.parse(
+          JSON.stringify(listProducts.listSuplement),
         );
+      }
+      // 2. إذا لمط تكن في السلة، نحاول جلبها من الطلب القديم (order) حصراً لهذا المنتج
+      else if (order && order.listOrder && Array.isArray(order.listOrder)) {
+        for (const orderItem of order.listOrder) {
+          if (orderItem.idproducts === product._id && orderItem.listSuplement) {
+            currentChooseList = JSON.parse(
+              JSON.stringify(orderItem.listSuplement),
+            );
+            break;
+          }
+        }
+      }
 
-        const foundSupplement = foundOrder?.listSuplement?.find(
-          (c) => c._id.toString() === item._id.toString(),
-        );
+      setChooseList(currentChooseList);
 
-        qtyInit[item._id] = foundSupplement ? foundSupplement.qty || 0 : 0;
+      // بناء خريطة الكميات الخاصة بهذا المنتج فقط دون سواه
+      const qtyInit: Record<string, number> = {};
+      product.supplements.forEach((sup) => {
+        sup.data.forEach((item: SupplementItem) => {
+          let foundQty = 0;
+          const matched = currentChooseList.find(
+            (c) =>
+              String(c._id) === String(item._id) ||
+              String(c.id) === String(item.id),
+          );
+          if (matched) {
+            foundQty = matched.qty || 0;
+          }
+          // ربط الكمية حصراً بمعرف المنتج الحالي ومعرف الإضافة
+          qtyInit[`${product._id}_${item._id}`] =
+            currentQty === 0 ? 0 : foundQty;
+        });
       });
-    });
 
-    setSupplementQty(qtyInit);
-    hasInitRef.current = true;
-  }, [order, product.supplements]);
+      setSupplementQty(qtyInit);
+      setDefaultSupplementQty(qtyInit);
+      setDefaultQuantity(currentQty);
+      setDefaultChooseList(JSON.parse(JSON.stringify(currentChooseList)));
+
+      const supplementsPrice = currentChooseList.reduce(
+        (sum, sup) => sum + Number(sup.price) * (sup.qty || 0),
+        0,
+      );
+      setshowTotal(product.total * currentQty + supplementsPrice);
+
+      const hasRequis = product.supplements.some(
+        (element) => element.chose === "requis",
+      );
+      if (!hasRequis && currentQty > 0) {
+        setIsRequis(true);
+      } else {
+        const totalRequisQty = currentChooseList
+          .filter((s) => s.status === "requis")
+          .reduce((sum, s) => sum + (s.qty || 0), 0);
+        setIsRequis(totalRequisQty === currentQty && currentQty > 0);
+      }
+    }
+  }, [isOpen, product._id]);
 
   // 5. إغلاق القائمة عند الضغط خارجها
- useEffect(() => {
+  useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         if (isOpen) {
-          // استبدل setOpenedProductId(null) بـ handleCloseBottomSheet لضمان الرجوع للقيمة الأصلية
           handleCloseBottomSheet();
         }
       }
@@ -182,7 +227,7 @@ export function QuantitySelector({
       const resetSupplements: Record<string, number> = {};
       product.supplements.forEach((sup) => {
         sup.data.forEach((item) => {
-          resetSupplements[item._id] = 0;
+          resetSupplements[`${product._id}_${item._id}`] = 0;
         });
       });
 
@@ -202,7 +247,7 @@ export function QuantitySelector({
           return element;
         }
         if ((element.qty || 0) > newQty) {
-          qtyInit[element._id] = newQty;
+          qtyInit[`${product._id}_${element._id}`] = newQty;
           return { ...element, qty: newQty };
         }
         return element;
@@ -230,14 +275,18 @@ export function QuantitySelector({
 
   const increaseSupplement = (item: SupplementItem, chose: string) => {
     if (quantity === 0) return;
-    if ((supplementQty[item._id] || 0) >= quantity) return;
+    const compositeKey = `${product._id}_${item._id}`;
+    if ((supplementQty[compositeKey] || 0) >= quantity) return;
 
     const listrequis = chooseList?.filter((sup) => sup.status === "requis");
     const totalQty = listrequis?.reduce((sum, sup) => sum + (sup.qty || 0), 0);
 
     if (chose === "requis" && totalQty >= quantity) return;
 
-    const index = chooseList.findIndex((e) => e._id === item._id);
+    // البحث بالمُعرف الأصلي للإضافة بدلاً من المفتاح المركب
+    const index = chooseList.findIndex(
+      (e) => String(e._id) === String(item._id),
+    );
     const newList = [...chooseList];
 
     if (index !== -1) {
@@ -259,7 +308,7 @@ export function QuantitySelector({
     setChooseList(newList);
     setSupplementQty((prev) => ({
       ...prev,
-      [item._id]: (prev[item._id] || 0) + 1,
+      [compositeKey]: (prev[compositeKey] || 0) + 1,
     }));
 
     const supplementsPrice = newList.reduce(
@@ -277,10 +326,12 @@ export function QuantitySelector({
   };
 
   const decreaseSupplement = (item: SupplementItem, chose: string) => {
-    if ((supplementQty[item._id] || 0) <= 0) return;
+    const compositeKey = `${product._id}_${item._id}`;
+    if ((supplementQty[compositeKey] || 0) <= 0) return;
 
     const newList = chooseList.map((s) => ({ ...s }));
-    const index = newList.findIndex((e) => e._id === item._id);
+    // البحث بالمُعرف الأصلي للإضافة
+    const index = newList.findIndex((e) => String(e._id) === String(item._id));
     if (index === -1) return;
 
     newList[index].qty = (newList[index].qty || 0) - 1;
@@ -291,7 +342,7 @@ export function QuantitySelector({
     setChooseList(newList);
     setSupplementQty((prev) => ({
       ...prev,
-      [item._id]: Math.max((prev[item._id] || 1) - 1, 0),
+      [compositeKey]: Math.max((prev[compositeKey] || 1) - 1, 0),
     }));
 
     const supplementsPrice = newList.reduce(
@@ -308,20 +359,16 @@ export function QuantitySelector({
     }
   };
 
-const handleCloseBottomSheet = () => {
-    // إعادة كل المتغيرات إلى قيمتها الاحتياطية الأصلية قبل الفتح
+  const handleCloseBottomSheet = () => {
     setSupplementQty(defaultSupplementQty);
-    setQuantity(defaultQuantity); // <-- هذا السطر يرجع الرقم تماماً لما كان عليه في السلة
+    setQuantity(defaultQuantity);
     setChooseList(JSON.parse(JSON.stringify(defaultChooseList)));
-    
-    // حساب السعر الإجمالي القديم بناءً على القيمة الأصلية
+
     const supplementsPrice = defaultChooseList.reduce(
       (sum, sup) => sum + Number(sup.price) * (sup.qty || 0),
       0,
     );
     setshowTotal(product.total * defaultQuantity + supplementsPrice);
-
-    // إغلاق القائمة
     setOpenedProductId(null);
   };
 
@@ -360,8 +407,8 @@ const handleCloseBottomSheet = () => {
           <div
             ref={menuRef}
             className="fixed bottom-0 left-0 right-0 max-h-[82vh] bg-white z-[101]
-                 shadow-2xl rounded-t-3xl transform transition-transform duration-300
-                 flex flex-col overflow-hidden pb-safe"
+               shadow-2xl rounded-t-3xl transform transition-transform duration-300
+               flex flex-col overflow-hidden pb-safe"
           >
             <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-2.5 mb-1 shrink-0" />
 
@@ -377,7 +424,6 @@ const handleCloseBottomSheet = () => {
               </button>
             </div>
 
-            {/* تم حل مشكلة الاسم الطويل هنا عبر إعطاء النص flex-1 مع line-clamp وحماية وحدة التحكم بـ shrink-0 */}
             <div className="flex items-center justify-between gap-4 px-5 py-3 border-b bg-gray-50 shrink-0">
               <div className="text-right flex-1 min-w-0">
                 <h2 className="text-sm font-black text-gray-800 line-clamp-1 break-all">
@@ -463,7 +509,7 @@ const handleCloseBottomSheet = () => {
                             </button>
 
                             <span className="w-4 text-center font-black text-sm text-gray-800">
-                              {supplementQty[item._id] || 0}
+                              {supplementQty[`${product._id}_${item._id}`] || 0}
                             </span>
 
                             <button
@@ -554,7 +600,6 @@ export function FloatingCart({ cartItems, order }: FloatingCartProps) {
 
   return (
     <>
-      {/* شريط السلة العائم مع ترك مسافة آمنة للشاشات */}
       <div className="fixed bottom-4 left-0 right-0 mx-auto w-[92%] max-w-md z-[90] pb-safe pointer-events-auto">
         <div className="bg-gray-900 text-white p-3 rounded-2xl shadow-2xl flex justify-between items-center backdrop-blur-md bg-opacity-95 border border-gray-800">
           <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -583,7 +628,6 @@ export function FloatingCart({ cartItems, order }: FloatingCartProps) {
         </div>
       </div>
 
-      {/* نافذة تفاصيل السلة المنبثقة (Modal) */}
       {open && (
         <div className="fixed inset-0 z-[110] flex items-end justify-center">
           <div
@@ -616,9 +660,7 @@ export function FloatingCart({ cartItems, order }: FloatingCartProps) {
                     <div className="flex justify-between gap-4 font-black text-sm text-gray-800">
                       <span className="flex-1 text-right line-clamp-1 min-w-0">
                         {item.title}{" "}
-                        <span className="text-red-500">
-                          × {item.qentity}
-                        </span>
+                        <span className="text-red-500">× {item.qentity}</span>
                       </span>
                       <span className="text-gray-700 shrink-0">
                         {(item.totalprice || 0).toLocaleString()} DZD

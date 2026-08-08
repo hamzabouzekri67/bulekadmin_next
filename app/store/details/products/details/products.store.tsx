@@ -513,7 +513,7 @@ export function ProductsStore() {
               {/* التحكم */}
               {!!orderId ? (
                 
-                <div className="flex justify-center items-center shrink-0">
+                <div key={e._id} className="flex justify-center items-center shrink-0">
                   <QuantitySelector
                     order={order}
                     product={e}
