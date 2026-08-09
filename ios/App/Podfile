@@ -4,7 +4,7 @@ use_frameworks!
 target 'App' do
   pod 'Capacitor', :path => '../../node_modules/@capacitor/ios'
   pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
-  
+  pod 'CapacitorStatusBar', :path => '../../node_modules/@capacitor/status-bar'
   # حزمة الإشعارات التي سبب المشكلة
   pod 'CapacitorPushNotifications', :path => '../../node_modules/@capacitor/push-notifications'
   

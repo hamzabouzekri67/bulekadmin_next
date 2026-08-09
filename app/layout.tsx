@@ -4,7 +4,6 @@ import "./globals.css";
 import { UserProvider } from "./context/UserContext";
 import AuthGuard from "./components/AuthGuard";
 import BackButtonHandler from "@/components/BackButtonHandler"; // 1. استورد المكون هنا
-import Navbar from "./components/Navbar.";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,10 +15,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+
 export const metadata: Metadata = {
   title: "Bulek Admin Dashboard",
   description: "لوحة التحكم لإدارة تطبيق Bulek Eats",
   manifest: "/manifest.json",
+  viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
   icons: {
     icon: "/favicon.ico",
     shortcut: "/public/logo.png",
@@ -61,3 +62,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+

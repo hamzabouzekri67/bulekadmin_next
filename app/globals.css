@@ -245,3 +245,25 @@
 .leaflet-bottom {
   z-index: 2 !important;
 }
+
+.header {
+  padding-top: env(safe-area-inset-top);
+  height: calc(4rem + env(safe-area-inset-top)); /* 4rem هي الـ h-16 الافتراضية + مساحة النتوء */
+}
+
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+
+.ios-header {
+  padding-top: max(env(safe-area-inset-top), 24px) !important;
+  height: calc(4rem + max(env(safe-area-inset-top), 24px)) !important;
+}
+/* حماية إضافية للـ Drawer لكي يفتح من أعلى الشاشة بشكل صحيح تحت شريط النظام */
+aside {
+  padding-top: env(safe-area-inset-top, 0px);
+}

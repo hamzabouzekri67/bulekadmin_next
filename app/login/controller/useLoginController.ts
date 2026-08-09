@@ -82,7 +82,6 @@ export function useLoginController() {
       if (res.ok) {
         const data = await res.json();
 
-       // console.error("data in Client:", data);
 
         if (data.status === true) {
         //  localStorage.setItem("token", data.result.token);
