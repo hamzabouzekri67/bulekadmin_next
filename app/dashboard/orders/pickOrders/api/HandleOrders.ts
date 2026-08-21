@@ -48,10 +48,11 @@ export async function AcceptedOrders(
       body: JSON.stringify(detailesOrder),
     });
 
-    console.log(res);
+   
 
     if (res.ok) {
       const data = await res.json();
+
 
       const targetId = data.result?.result?.orderId;
 

@@ -40,6 +40,9 @@ const OrderDetails = () => {
   const { socket, ready } = useSocket();
   const [currentDriver, setCurrentDriver] = useState<Driver[]>([]);
 
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [apiResponse, setApiResponse] = useState(null);
+
   //console.log(user);
 
   useEffect(() => {
@@ -643,7 +646,15 @@ const OrderDetails = () => {
               <button
                 onClick={async () => {
                   if (!detailesOrders) return;
-                  await SearchDriver(detailesOrders);
+                  const checkSearch = await SearchDriver(detailesOrders);
+
+                  const result = checkSearch.result || checkSearch;
+                  if (result && result.status === false) {
+                    setApiResponse(checkSearch); // تخزين الرد لعرض الرسالة المناسبة
+                    setIsDialogOpen(true); // فتح الـ Dialog هنا
+                  } else {
+                    console.log("Searching started successfully...");
+                  }
                 }}
                 className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 transition"
               >
@@ -651,6 +662,12 @@ const OrderDetails = () => {
               </button>
             </div>
           )}
+          {/* مكون الـ Dialog يتم وضعه هنا ليظهر فوق العناصر عند حدوث خطأ */}
+          <DriverDialog
+            isOpen={isDialogOpen}
+            onClose={() => setIsDialogOpen(false)}
+            responseData={apiResponse}
+          />
         </div>
       </div>
     </div>
@@ -685,3 +702,129 @@ const ProductRow = ({
     <td className="p-2 md:p-4 text-sm font-bold">{`${total} ${currency}`}</td>
   </tr>
 );
+
+interface DriverDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  responseData: ResponseData | null;
+}
+
+interface ApiResult {
+  status: boolean;
+  message: string;
+  driversCount?: number;
+}
+
+interface ResponseData {
+  result?: ApiResult;
+  status?: boolean;
+  message?: string;
+  driversCount?: number;
+}
+
+export function DriverDialog({
+  isOpen,
+  onClose,
+  responseData,
+}: DriverDialogProps) {
+  if (!isOpen || !responseData) return null;
+
+  const resultData = responseData.result || responseData;
+  const { status, message } = resultData;
+
+  // تخصيص العنوان والرسالة واللون حسب الـ message القادم من الـ Backend
+  let title = "تنبيه";
+  let description = message;
+  let iconColor = "bg-amber-100 text-amber-600";
+
+  console.log(responseData);
+
+  switch (message) {
+    case "driver_exist":
+      title = "تم تعيين سائق مسبقاً";
+      description = "عذراً، هذا الطلب يحتوي بالفعل على سائق ولن يتم تعديله.";
+      iconColor = "bg-red-100 text-red-600";
+      break;
+    case "order_no_exist":
+      title = "الطلب غير موجود";
+      description = "لم يتم العثور على هذا الطلب في النظام، قد يكون محذوفاً.";
+      iconColor = "bg-red-100 text-red-600";
+      break;
+    case "ville_no_exist":
+      title = "المنطقة غير محددة";
+      description =
+        "يرجى تحديد المدينة أو المنطقة الخاصة بالطلب للبحث عن سائقين.";
+      iconColor = "bg-orange-100 text-orange-600";
+      break;
+    case "driver_no_exist":
+      title = "لا يوجد سائقون متاحون";
+      description =
+        "لا يوجد حالياً أي سائق متصل، حسابه مفعل، ولديه رصيد كافٍ في هذه المنطقة.";
+      iconColor = "bg-blue-100 text-blue-600";
+      break;
+    case "expired":
+      title = "انتهاء الصلاحية";
+      description = "انتهت صلاحية البيانات المرسلة، يرجى إعادة المحاولة.";
+      iconColor = "bg-gray-100 text-gray-600";
+      break;
+
+    case "worker_busy":
+      title = "عملية البحث جارية";
+      description =
+        "النظام يقوم حالياً بالبحث عن سائق لهذا الطلب، يرجى الانتظار قليلاً.";
+      iconColor = "bg-amber-100 text-amber-600";
+      break;
+    default:
+      if (status) {
+        title = "تم بنجاح";
+        description = "تم العثور على سائقين متاحين للطلب بنجاح.";
+        iconColor = "bg-green-100 text-green-600";
+      }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity p-4">
+      <div className="w-full max-w-sm transform overflow-hidden rounded-2xl bg-white p-6 text-right shadow-2xl transition-all">
+        {/* الأيقونة */}
+        <div
+          className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full ${iconColor}`}
+        >
+          <svg
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+
+        {/* العنوان */}
+        <h3 className="mt-4 text-center text-lg font-bold text-gray-900">
+          {title}
+        </h3>
+
+        {/* الوصف */}
+        <p className="mt-2 text-center text-sm text-gray-600 leading-relaxed">
+          {description}
+        </p>
+
+        {/* زر الإغلاق */}
+        <div className="mt-6 flex justify-center">
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 focus:outline-none transition-colors"
+          >
+            حسناً
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
