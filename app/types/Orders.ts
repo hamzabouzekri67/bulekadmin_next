@@ -54,8 +54,14 @@ export type Order = {
   storTotalpromo: number;
   claimId: string;
   discountSettings: DiscountSettings;
-  deliverySettings:DeliverySettings
+  deliverySettings: DeliverySettings;
   discountAmount: number;
+  grandTotal: number;
+  client: {
+    firstName?: string;
+    lastName?: string;
+    phone:string
+  };
 };
 
 export type DiscountSponsoredBy = {
@@ -170,7 +176,7 @@ export type Product = {
   ratings: unknown[];
   supplements: Supplement[];
   supIds: string[];
-  discount:number
+  discount: number;
 };
 
 export type Supplement = {

@@ -17,6 +17,7 @@ import {
   CreditCard,
   Sparkles,
   Percent,
+  History
 } from "lucide-react";
 
 export default function AppBar() {
@@ -77,6 +78,11 @@ export default function AppBar() {
 
   const links = [
     { href: "/dashboard/orders", label: "Commandes", icon: <List size={20} /> },
+    {
+      href: "/dashboard/orders/history",
+      label: "Historique",
+      icon: <History size={20} />,
+    },
     {
       href: "/dashboard/drivers",
       label: "Livreurs",

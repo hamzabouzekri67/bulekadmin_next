@@ -32,7 +32,6 @@ export async function GetOrdersPending(
     });
     if (res.ok) {
       const data = await res.json();
-      console.log(data);
       if (data.result.orders.length <= 0) return null;
 
       const order: Order = data.result.orders[0];

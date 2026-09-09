@@ -1,12 +1,12 @@
 "use client";
-import React, { Suspense } from "react";
+import React, { Suspense, useCallback } from "react";
 import { useState, useEffect, useRef } from "react";
 import { GetOrdersPending } from "./api/GetDetailesOrder";
 import { useParams, useSearchParams } from "next/navigation";
 import { useUser } from "@/app/context/UserContext";
 import { Order, Driver, ListOrder } from "@/app/types/Orders";
 import { PageShimmer } from "./components/shimmerPage";
-import { SearchDriver } from "./api/SearchDriver";
+import { SearchDriver, RsearchDriver } from "./api/SearchDriver";
 import { useSocket } from "@/app/hooks/useSocket";
 import {
   DiscountRow,
@@ -43,7 +43,24 @@ const OrderDetails = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [apiResponse, setApiResponse] = useState(null);
 
+  const [isSearchWarningOpen, setIsSearchWarningOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isBtnLoading, setIsBtnLoading] = useState(false);
+
   //console.log(user);
+
+  const reloadOrderData = useCallback(() => {
+    if (!user || !validOrderId || !isValidObjectId(validOrderId)) return;
+
+    GetOrdersPending(
+      user,
+      validOrderId,
+      setDetailesOrders,
+      setLoading,
+      setCurrentDriver,
+      setDriver,
+    );
+  }, [user, validOrderId]);
 
   useEffect(() => {
     if (!user) return;
@@ -69,8 +86,11 @@ const OrderDetails = () => {
 
       socket?.off("searchExpired");
       socket?.on("searchExpired", (e) => {
+        console.log(e);
+        
         if (!e) return;
         setCurrentDriver([]);
+      //  setIsBtnLoading(false);
       });
       //acceptedOrder_with_Driver
       socket?.off("send_admin");
@@ -81,6 +101,7 @@ const OrderDetails = () => {
           order.driver.id = e.driver._id;
           setDriver(order.driver);
           setCurrentDriver([]);
+          setIsBtnLoading(false);
         }
       });
     }
@@ -121,7 +142,7 @@ const OrderDetails = () => {
           <button className="w-full sm:w-auto px-4 py-2 border border-gray-300 bg-white rounded-lg flex items-center justify-center gap-2 text-sm text-gray-700 hover:bg-gray-100">
             Print
           </button>
-          {detailesOrders?.status === "prepare" && (
+          {
             <Link
               className="bg-gray-600 text-white text-sm py-2 px-4 rounded-md hover:bg-gray-700 transition-colors flex items-center justify-center"
               href={{
@@ -134,7 +155,7 @@ const OrderDetails = () => {
             >
               Mettre à jour
             </Link>
-          )}
+          }
         </div>
       </div>
 
@@ -241,7 +262,7 @@ const OrderDetails = () => {
               </h3>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left min-w-[500px]">
+              <table className="w-full text-left min-w-125">
                 <thead className="bg-gray-50 text-xs md:text-sm uppercase text-gray-500">
                   <tr>
                     <th className="p-2 md:p-4">Item Details</th>
@@ -636,6 +657,16 @@ const OrderDetails = () => {
                     </span>
                   </div>
                 </div>
+
+                {/* زر إعادة البحث في حال حدوث عطل للسائق الحالي */}
+                <div className="mt-2 pt-3 border-t border-gray-100">
+                  <button
+                    onClick={() => setIsSearchWarningOpen(true)}
+                    className="w-full py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-amber-200"
+                  >
+                    ⚠️ Panne / Problème chauffeur (Rechercher un autre)
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
@@ -646,23 +677,87 @@ const OrderDetails = () => {
               <button
                 onClick={async () => {
                   if (!detailesOrders) return;
+                 // setIsBtnLoading(true);
                   const checkSearch = await SearchDriver(detailesOrders);
 
                   const result = checkSearch.result || checkSearch;
                   if (result && result.status === false) {
-                    setApiResponse(checkSearch); // تخزين الرد لعرض الرسالة المناسبة
-                    setIsDialogOpen(true); // فتح الـ Dialog هنا
+                    setApiResponse(checkSearch);
+                    setIsDialogOpen(true);
                   } else {
                     console.log("Searching started successfully...");
+                    setTimeout(() => {
+                      reloadOrderData();
+                    }, 500);
                   }
                 }}
-                className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-bold text-sm hover:bg-blue-700 transition"
+                className={`w-full py-2.5 rounded-xl font-bold text-sm transition ${
+                  isBtnLoading
+                    ? "bg-gray-400 cursor-not-allowed text-white"
+                    : "bg-red-600 text-white hover:bg-red-700"
+                }`}
               >
                 Search for Driver
               </button>
             </div>
           )}
-          {/* مكون الـ Dialog يتم وضعه هنا ليظهر فوق العناصر عند حدوث خطأ */}
+
+          {/* نافذة التحذير الخاصة بحظر السائق المؤقت عند حدوث عطل وإعادة البحث */}
+          {isSearchWarningOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fadeIn">
+              <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-gray-100 space-y-4">
+                <div className="flex items-center gap-3 text-red-600">
+                  <div className="p-3 bg-amber-50 rounded-full">⚠️</div>
+                  <h3 className="text-lg font-bold text-gray-900">
+                    Avertissement : Panne Chauffeur
+                  </h3>
+                </div>
+
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Attention : En relançant la recherche en raison d&apos;un
+                  problème ou d&apos;une panne, le chauffeur actuel sera{" "}
+                  <span className="font-bold text-red-600">
+                    banni temporairement
+                  </span>{" "}
+                  du système pour une durée déterminée. Voulez-vous continuer ?
+                </p>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setIsSearchWarningOpen(false)}
+                    className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-200 transition"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!detailesOrders) return;
+                      setIsSearchWarningOpen(false);
+                      const checkSearch = await RsearchDriver(detailesOrders);
+
+                      const result = checkSearch.result || checkSearch;
+                      if (result && result.status === false) {
+                        setApiResponse(checkSearch);
+                        setIsDialogOpen(true);
+                      } else {
+                        console.log(
+                          "Searching for new driver after breakdown started...",
+                        );
+                        setTimeout(() => {
+                          reloadOrderData();
+                        }, 500);
+                      }
+                    }}
+                    className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition"
+                  >
+                    Relancer la recherche
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* مكون الـ Dialog الرئيسي */}
           <DriverDialog
             isOpen={isDialogOpen}
             onClose={() => setIsDialogOpen(false)}

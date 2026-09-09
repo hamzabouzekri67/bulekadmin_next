@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useUser } from "../../context/UserContext"; // تأكد أن logout موجودة هنا
+import { useUser } from "../../context/UserContext";
 import { useRouter } from "next/navigation";
 import {
   Menu,
@@ -14,7 +14,8 @@ import {
   X,
   CreditCard,
   Sparkles,
-  Percent, // استيراد الأيقونة الخاصة بالمطاعم والعروض المميزة
+  Percent,
+  History, // 1. استيراد أيقونة السجل (History)
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Preferences } from "@capacitor/preferences";
@@ -23,7 +24,7 @@ export default function Drawer() {
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const { user, logout } = useUser(); // استخراج دالة logout
+  const { user, logout } = useUser();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -32,10 +33,7 @@ export default function Drawer() {
       try {
         const { value: token } = await Preferences.get({ key: "token" });
 
-        console.log("Token retrieved:", token);
-
         if (!token) {
-          console.log("No token found, logging out...");
           await handleLogout();
         }
       } catch (error) {
@@ -58,19 +56,9 @@ export default function Drawer() {
 
   const handleLogout = async () => {
     try {
-      // 1. حذف التوكن من التخزين الدائم (سيعمل في الويب والأندرويد)
       await Preferences.remove({ key: "token" });
-
-      // 2. تنظيف أي بيانات مستخدم أخرى إذا كنت تخزنها
-     // await Preferences.remove({ key: "user_data" });
-
-      // 3. (اختياري) مسح الـ LocalStorage القديم إذا كنت ما زلت تستخدمه للنسخ الاحتياطية
       localStorage.clear();
-
-      // 4. إعادة توجيه المستخدم لصفحة تسجيل الدخول
       router.replace("/login");
-
-      // 5. إعادة تحميل الصفحة لضمان تنظيف حالة التطبيق (State)
       window.location.reload();
     } catch (error) {
       console.error("Error during logout:", error);
@@ -81,6 +69,11 @@ export default function Drawer() {
 
   const links = [
     { href: "/dashboard/orders", label: "Commandes", icon: <List size={20} /> },
+    { 
+      href: "/dashboard/orders/history",
+      label: "Historique", 
+      icon: <History size={20} /> 
+    },
     {
       href: "/dashboard/drivers",
       label: "Livreurs",
