@@ -26,21 +26,56 @@ const tabs = [
   { id: "disabled", label: "Désactivé" },
 ];
 
-// دالة لتحويل تاريخ الـ ISO إلى شكل زمني مريح وواضح
-function formatLastActive(dateString?: string | Date) {
-  if (!dateString) return "Jamais";
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+// مكون لعرض الوقت بتحديث حي (Real-time)
+const LiveLastActive = ({ dateString }: { dateString?: string | Date }) => {
+  const [timeAgo, setTimeAgo] = useState("");
 
-  if (diffMinutes < 1) return "À l'instant";
-  if (diffMinutes < 60) return `Il y a ${diffMinutes} min`;
-  
-  const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `Il y a ${diffHours} h`;
-  
-  return date.toLocaleDateString("fr-FR", { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
+  useEffect(() => {
+    const calculateTime = () => {
+      if (!dateString) {
+        setTimeAgo("Jamais");
+        return;
+      }
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+
+      if (diffMinutes < 1) {
+        setTimeAgo("À l'instant");
+      } else if (diffMinutes < 60) {
+        setTimeAgo(`Il y a ${diffMinutes} min`);
+      } else {
+        const diffHours = Math.floor(diffMinutes / 60);
+        if (diffHours < 24) {
+          setTimeAgo(`Il y a ${diffHours} h`);
+        } else {
+          setTimeAgo(
+            date.toLocaleDateString("fr-FR", {
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          );
+        }
+      }
+    };
+
+    calculateTime(); // حساب الوقت فوراً عند التحميل
+
+    // تحديث الوقت كل 30 ثانية بشكل تلقائي (Real-time)
+    const interval = setInterval(calculateTime, 30000); 
+
+    return () => clearInterval(interval); // تنظيف الـ Interval عند إغلاق المكون
+  }, [dateString]);
+
+  return (
+    <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 w-fit">
+      <Clock size={14} className="text-red-500 animate-pulse" />
+      <span className="text-xs font-bold text-slate-700">{timeAgo}</span>
+    </div>
+  );
+};
 
 const VehiclesPage = () => {
   const { user } = useUser();
@@ -138,7 +173,7 @@ const VehiclesPage = () => {
                 <th className="px-6 py-5 text-center">Service</th>
                 <th className="px-6 py-5 text-left">Documents</th>
                 <th className="px-6 py-5 text-left">Contact & Zone</th>
-                <th className="px-6 py-5 text-left">Dernier Actif</th> {/* عمود مستقل */}
+                <th className="px-6 py-5 text-left">Dernier Actif</th>
                 <th className="px-6 py-5 text-left">Finance</th>
                 {(user?.role === "admin" || user?.role === "super_admin") && (
                   <th className="px-8 py-5 text-right">Actions</th>
@@ -247,14 +282,9 @@ const VehiclesPage = () => {
                     </div>
                   </td>
 
-                  {/* Dernier Actif (خانة مستقلة تماماً) */}
+                  {/* Dernier Actif (خانة مستقلة بتحديث حي) */}
                   <td className="px-6 py-5">
-                    <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 w-fit">
-                      <Clock size={14} className="text-red-500" />
-                      <span className="text-xs font-bold text-slate-700">
-                        {formatLastActive(v.last_active_at)}
-                      </span>
-                    </div>
+                    <LiveLastActive dateString={v.last_active_at} />
                   </td>
 
                   {/* Finance */}
