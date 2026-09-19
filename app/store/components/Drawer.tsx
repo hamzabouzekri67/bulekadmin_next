@@ -1,13 +1,13 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Menu, Plus, X, Pencil, Trash2 } from "lucide-react";
-import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { Menu, Plus, X, Pencil, Trash2, GripVertical } from "lucide-react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useCategories } from "@/app/context/CategoryContext";
 import { addCatg, deleteCatg, updateCatg } from "../api/GetProducts";
 import { Category } from "@/app/types/Orders";
-
 import { ParsedUrlQueryInput } from "querystring";
+
 export default function Drawer() {
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -16,30 +16,38 @@ export default function Drawer() {
   // States الخاصة بالنافذة المنبثقة (Modal) للإضافة والتعديل
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
-  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(
-    null,
-  );
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isOffer, setIsOffer] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const searchParams = useSearchParams();
   const id = searchParams.get("id") ?? "";
-  //  const params = useParams();
   const router = useRouter();
-  const SearchParams = useSearchParams();
-  const orderId = SearchParams?.get("orderId");
+  const orderId = searchParams?.get("orderId");
   const validOrderId = id as string;
 
-  const { categories, loading, fetchCategories, order, isCategoryDeletable } =
-    useCategories();
+  const { categories, loading, fetchCategories, order, isCategoryDeletable } = useCategories();
+
+  // حالة محلية للفئات لكي تتحدث الواجهة (UI) فوراً عند السحب والإفلات
+  const [localCategories, setLocalCategories] = useState<Category[]>([]);
+  
+  // مراجع لتتبع العنصر الذي يتم سحبه (سواء بالماوس أو باللمس)
+  const draggedItemIndex = useRef<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  // تحديث الحالة المحلية كلما جلبنا الفئات من الـ Context مع فصل دقيق للعروض
+  useEffect(() => {
+    if (categories) {
+      const offers = categories.filter((cat) => cat.offer === true);
+      const normals = categories.filter((cat) => !cat.offer);
+      setLocalCategories([...offers, ...normals]);
+    }
+  }, [categories]);
 
   const [isActive, setIsActive] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
-    null,
-  );
-  //console.log(id);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
   const categoryId = searchParams.get("categoryId") ?? "";
   const activeCategoryId = categoryId;
@@ -62,7 +70,6 @@ export default function Drawer() {
 
   const isDrawerOpen = isMobile ? open : true;
 
-  // فتح المودال في وضع الإضافة
   const handleOpenAddModal = () => {
     setModalMode("add");
     setNewCategoryName("");
@@ -71,7 +78,68 @@ export default function Drawer() {
     setShowModal(true);
   };
 
-  // دالة حفظ الفئة والانتقال إليها مباشرة
+  // دالة مشتركة لتنفيذ عملية إعادة الترتيب
+  const moveItem = (sourceIndex: number, targetIndex: number) => {
+    if (sourceIndex === targetIndex || sourceIndex < 0 || targetIndex < 0 || targetIndex >= localCategories.length) return;
+
+    const updatedList = [...localCategories];
+    const [movedItem] = updatedList.splice(sourceIndex, 1);
+    updatedList.splice(targetIndex, 0, movedItem);
+
+    setLocalCategories(updatedList);
+  };
+
+  // دوال التعامل مع الماوس (Desktop Drag and Drop)
+  const handleDragStart = (index: number) => {
+    draggedItemIndex.current = index;
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDrop = (targetIndex: number) => {
+    const sourceIndex = draggedItemIndex.current;
+    if (sourceIndex !== null) {
+      moveItem(sourceIndex, targetIndex);
+    }
+    draggedItemIndex.current = null;
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    draggedItemIndex.current = null;
+    setDragOverIndex(null);
+  };
+
+  // دوال التعامل مع اللمس (Mobile Touch Drag and Drop)
+  const handleTouchStart = (index: number) => {
+    draggedItemIndex.current = index;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    const targetItem = element?.closest("[data-index]");
+    if (targetItem) {
+      const targetIndex = Number(targetItem.getAttribute("data-index"));
+      if (!isNaN(targetIndex)) {
+        setDragOverIndex(targetIndex);
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    const sourceIndex = draggedItemIndex.current;
+    const targetIndex = dragOverIndex;
+    if (sourceIndex !== null && targetIndex !== null) {
+      moveItem(sourceIndex, targetIndex);
+    }
+    draggedItemIndex.current = null;
+    setDragOverIndex(null);
+  };
+
   const handleConfirmSaveCategory = async () => {
     if (!newCategoryName.trim()) {
       alert("الرجاء إدخال اسم الفئة أولاً");
@@ -83,41 +151,22 @@ export default function Drawer() {
 
       if (modalMode === "add") {
         const response = await addCatg(id, newCategoryName, isOffer);
-        console.log("تمت إضافة الفئة بنجاح");
-
         await fetchCategories(validOrderId, orderId);
 
-        const newId =
-          response?._id || response?.data?._id || response?.result?._id;
+        const newId = response?._id || response?.data?._id || response?.result?._id;
 
         if (newId) {
-          // // 1. بناء المتغيرات بشكل آمن
-          // const params = new URLSearchParams();
-          // if (orderId) {
-          //   params.set("orderId", orderId);
-          // }
-
-          // const path = `/store/${id}/products/${newId}`;
-
-          // const queryString = params.toString();
-          // router.push(queryString ? `${path}?${queryString}` : path);
-
           const queryParams: Record<string, string> = {
             id: id,
             categoryId: newId,
           };
 
-          // 2. إضافة المتغيرات الاختيارية (مثل orderId)
           if (orderId) {
             queryParams.orderId = orderId;
           }
 
-          // 3. بناء الرابط النهائي باستخدام URLSearchParams
-          // هذا يضمن توافق الـ Build وتجنب أخطاء الـ TypeScript
           const searchParams = new URLSearchParams(queryParams);
           const url = `/store/details/products/details?${searchParams.toString()}`;
-
-          // 4. الانتقال للرابط
           router.push(url);
         }
       } else if (modalMode === "edit" && editingCategoryId) {
@@ -128,7 +177,6 @@ export default function Drawer() {
           newCategoryName,
           isOffer,
         );
-        console.log("تم تعديل الفئة بنجاح");
         await fetchCategories(validOrderId, orderId);
       }
 
@@ -157,44 +205,32 @@ export default function Drawer() {
     try {
       setIsSubmitting(true);
 
-      // 1. تحديد ما إذا كنا نحذف الفئة النشطة مفتوحة الرابط حالياً
       const isDeletingActiveCategory =
         String(categoryToDelete._id) === String(activeCategoryId);
 
-      // 2. البحث عن فئة بديلة للانتقال إليها قبل إتمام الحذف
       let fallbackCategoryId: string | null = null;
-      if (isDeletingActiveCategory && categories.length > 1) {
-        const currentIndex = categories.findIndex(
+      if (isDeletingActiveCategory && localCategories.length > 1) {
+        const currentIndex = localCategories.findIndex(
           (cat) => cat._id === categoryToDelete._id,
         );
 
         if (currentIndex > 0) {
-          // الفئة السابقة (إذا لم تكن الفئة المحذوفة هي الأولى)
-          fallbackCategoryId = categories[currentIndex - 1]._id;
+          fallbackCategoryId = localCategories[currentIndex - 1]._id;
         } else {
-          // الفئة التالية (إذا كانت الفئة المحذوفة هي الأولى في القائمة)
-          fallbackCategoryId = categories[currentIndex + 1]._id;
+          fallbackCategoryId = localCategories[currentIndex + 1]._id;
         }
       }
 
-      // 3. تنفيذ عملية الحذف في السيرفر
       await deleteCatg(categoryToDelete._id);
-      console.log("تم حذف الفئة بنجاح");
-
-      // 4. تحديث البيانات في الـ Context
       await fetchCategories(validOrderId, orderId);
 
       setShowDeleteModal(false);
       setCategoryToDelete(null);
 
-      console.log("isDeletingActiveCategory", isDeletingActiveCategory);
-
       if (isDeletingActiveCategory) {
         const queryParams: Record<string, string> = {
           id: id,
         };
-        const params = new URLSearchParams();
-        params.set("id", id);
         if (fallbackCategoryId) queryParams.categoryId = fallbackCategoryId;
         if (orderId) queryParams.orderId = orderId;
 
@@ -212,7 +248,6 @@ export default function Drawer() {
 
   const handleDeleteCategory = (cat: Category, e: React.MouseEvent) => {
     e.preventDefault();
-
     const hasProducts = cat.products && cat.products.length > 0;
 
     if (hasProducts) {
@@ -267,12 +302,12 @@ export default function Drawer() {
           <div className="overflow-y-auto flex-1 text-right">
             <div className="p-4 border-b border-gray-200">
               <h2 className="text-sm font-bold text-gray-100 tracking-wide">
-                القوائم والفئات
+                القوائم والفئات (اسحب للترتيب)
               </h2>
             </div>
 
             <nav className="flex flex-col gap-1.5 p-3">
-              {categories.map((cat) => {
+              {localCategories.map((cat, index) => {
                 const isMatched = order?.listOrder.some(
                   (item) => item.category === cat.category,
                 );
@@ -282,24 +317,36 @@ export default function Drawer() {
                   categoryId: cat._id,
                 };
 
-                // لا نضيف الـ orderId إلا إذا كان له قيمة حقيقية
                 if (orderId) {
                   queryParams.orderId = orderId;
                 }
 
-                // 🌟 فحص ما إذا كانت هذه الفئة هي النشطة حالياً في المتصفح
                 const isSelected = String(cat._id) === String(activeCategoryId);
-                //  const isDeletable = !cat.products || cat.products.length === 0;
-                //  const canDelete = isCategoryDeletable(cat._id);
+                const isOver = dragOverIndex === index;
+                const canDelete = isCategoryDeletable(cat._id);
 
                 return (
-                  <div key={cat._id} className="relative group">
+                  <div
+                    key={cat._id}
+                    data-index={index}
+                    draggable
+                    onDragStart={() => handleDragStart(index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDrop={() => handleDrop(index)}
+                    onDragEnd={handleDragEnd}
+                    onTouchStart={() => handleTouchStart(index)}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    className={`relative group transition-all duration-200 select-none touch-none ${
+                      isOver ? "border-t-2 border-white pt-1" : ""
+                    }`}
+                  >
                     <Link
                       href={{
-                         pathname: `/store/details/products/details`,
-                         query: queryParams,
+                        pathname: `/store/details/products/details`,
+                        query: queryParams,
                       }}
-                      className={`block w-full text-right py-2.5 pl-20 pr-3 rounded-xl transition-all duration-200 ${
+                      className={`block w-full text-right py-3 pl-24 pr-10 rounded-xl transition-all duration-200 truncate ${
                         isSelected
                           ? "bg-amber-500 text-white font-bold"
                           : isMatched
@@ -307,35 +354,44 @@ export default function Drawer() {
                             : "hover:bg-red-500 text-white"
                       } ${cat.status == "pause" ? "opacity-50" : ""}`}
                     >
-                      <div className="flex justify-between items-center flex-row-reverse">
-                        <span>{cat.category}</span>
-                      </div>
+                      {/* عرض اسم الفئة في سطر واحد كامل */}
+                      <span className="block truncate" title={cat.category}>
+                        {cat.category}
+                      </span>
                     </Link>
 
-                    {/* أزرار التحكم الجانبية */}
-                    <div className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                    {/* مقبض السحب (Drag Handle) يدعم الماوس واللمس في أقصى اليسار */}
+                    <div 
+                      title="اضغط واسحب لترتيب الفئة"
+                      className="absolute left-1.5 top-3 p-1 text-red-200 hover:text-white cursor-grab active:cursor-grabbing flex items-center"
+                    >
+                      <GripVertical size={16} />
+                    </div>
+
+                    {/* أزرار التعديل والحذف الجانبية */}
+                    <div className="absolute left-7 top-3 flex items-center gap-0.5 bg-red-700/80 backdrop-blur-xs px-1 py-0.5 rounded-lg shadow-sm">
+                      {/* زر التعديل */}
                       <button
                         onClick={(e) => {
                           e.preventDefault();
                           handleOpenEditModal(cat);
                         }}
                         title="تعديل الاسم"
-                        className="p-1 text-blue-200 hover:bg-blue-700 rounded-md transition"
+                        className="p-1 text-blue-200 hover:bg-blue-800 rounded transition"
                       >
-                        <Pencil size={14} />
+                        <Pencil size={13} />
                       </button>
 
-                      <button
-                        onClick={(e) => handleDeleteCategory(cat, e)}
-                        title={
-                          isCategoryDeletable(cat._id)
-                            ? "حذف الفئة"
-                            : "لا يمكن الحذف (تحتوي على منتجات)"
-                        }
-                        className={`p-1 rounded-md transition ${isCategoryDeletable(cat._id) ? "text-white hover:bg-red-800" : "text-red-400/40 cursor-not-allowed"}`}
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {/* زر الحذف يظهر فقط إذا كان متاحاً */}
+                      {canDelete && (
+                        <button
+                          onClick={(e) => handleDeleteCategory(cat, e)}
+                          title="حذف الفئة"
+                          className="p-1 text-white hover:bg-red-900 rounded transition"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -348,11 +404,11 @@ export default function Drawer() {
             <button
               onClick={handleOpenAddModal}
               className="flex items-center justify-center gap-2 w-full py-3 px-4 
-                         bg-linear-to-r from-gray-200 to-gray-100
-                         hover:from-red-600 hover:to-red-600 
-                         text-black font-bold rounded-xl shadow-md 
-                         hover:shadow-lg active:scale-[0.98] 
-                         transition-all duration-200 text-sm"
+                       bg-linear-to-r from-gray-200 to-gray-100
+                       hover:from-red-600 hover:to-red-600 
+                       text-black font-bold rounded-xl shadow-md 
+                       hover:shadow-lg active:scale-[0.98] 
+                       transition-all duration-200 text-sm"
             >
               <Plus size={18} />
               <span>إضافة فئة جديدة</span>
@@ -503,21 +559,9 @@ export default function Drawer() {
             {/* أزرار التحكم */}
             <div className="flex gap-3 justify-start">
               <button
-                disabled={
-                  isSubmitting ||
-                  (modalMode === "edit" &&
-                    categories
-                      .find((cat) => cat._id === editingCategoryId)
-                      ?.category.trim() === newCategoryName.trim() &&
-                    categories.find((cat) => cat._id === editingCategoryId)
-                      ?.offer === isOffer &&
-                    (categories.find((cat) => cat._id === editingCategoryId)
-                      ?.status ==
-                      "public") ===
-                      isActive)
-                }
+                disabled={isSubmitting}
                 onClick={handleConfirmSaveCategory}
-                className="flex-1 py-2.5 px-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow transition disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400 text-sm"
+                className="flex-1 py-2.5 px-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow transition disabled:opacity-50 text-sm"
               >
                 {isSubmitting
                   ? "جاري الحفظ..."

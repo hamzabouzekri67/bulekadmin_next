@@ -3,44 +3,55 @@ import React, { useEffect, useState } from "react";
 import {
   Plus,
   Search,
-  Filter,
-  MoreHorizontal,
   Bike,
   Phone,
   MapPin,
-  Package,
   Wallet,
   ChevronRight,
-  Eye,
   FileText,
   CheckCircle2,
-  AlertCircle,
   Clock,
+  Eye,
 } from "lucide-react";
 import { GetDriverList, handelAccountDriver } from "./api/GetListDriver";
 import { useUser } from "@/app/context/UserContext";
-import { DriverData, DriverStatus } from "@/app/types/Drivers";
+import { DriverData } from "@/app/types/Drivers";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 const tabs = [
   { id: "online", label: "En ligne" },
   { id: "offline", label: "Hors ligne" },
-  { id: "sent", label: "En attente" }, // التبويب المهم للمراجعة
+  { id: "sent", label: "En attente" },
   { id: "disabled", label: "Désactivé" },
 ];
+
+// دالة لتحويل تاريخ الـ ISO إلى شكل زمني مريح وواضح
+function formatLastActive(dateString?: string | Date) {
+  if (!dateString) return "Jamais";
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+
+  if (diffMinutes < 1) return "À l'instant";
+  if (diffMinutes < 60) return `Il y a ${diffMinutes} min`;
+  
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `Il y a ${diffHours} h`;
+  
+  return date.toLocaleDateString("fr-FR", { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
 
 const VehiclesPage = () => {
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState("online");
   const [driverData, setDriverData] = useState<DriverData[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const router = useRouter()
-
+  const router = useRouter();
 
   useEffect(() => {
     if (!user) return;
-    GetDriverList(user, activeTab, setDriverData,router);
+    GetDriverList(user, activeTab, setDriverData, router);
   }, [user, activeTab]);
 
   // تصفية البحث محلياً
@@ -126,7 +137,8 @@ const VehiclesPage = () => {
                 <th className="px-8 py-5 text-left">Livreur Profil</th>
                 <th className="px-6 py-5 text-center">Service</th>
                 <th className="px-6 py-5 text-left">Documents</th>
-                <th className="px-6 py-5 text-left">Stats & Zone</th>
+                <th className="px-6 py-5 text-left">Contact & Zone</th>
+                <th className="px-6 py-5 text-left">Dernier Actif</th> {/* عمود مستقل */}
                 <th className="px-6 py-5 text-left">Finance</th>
                 {(user?.role === "admin" || user?.role === "super_admin") && (
                   <th className="px-8 py-5 text-right">Actions</th>
@@ -168,7 +180,7 @@ const VehiclesPage = () => {
                         <input
                           type="checkbox"
                           className="sr-only peer"
-                          disabled={v.status === "sent"} // تعطيل التبديل إذا لم يتم القبول بعد
+                          disabled={v.status === "sent"}
                           checked={v.isAccountActive || false}
                           onChange={async () => {
                             const newState = !v.isAccountActive;
@@ -192,7 +204,7 @@ const VehiclesPage = () => {
                     </div>
                   </td>
 
-                  {/* New: Documents Status Column */}
+                  {/* Documents Status Column */}
                   <td className="px-6 py-5">
                     <div className="flex flex-col gap-1">
                       {v.status === "sent" ? (
@@ -211,14 +223,8 @@ const VehiclesPage = () => {
                         </div>
                       )}
                       <div className="flex gap-1">
-                        <div
-                          className="w-1.5 h-1.5 rounded-full bg-blue-400"
-                          title="Permis"
-                        />
-                        <div
-                          className="w-1.5 h-1.5 rounded-full bg-blue-400"
-                          title="Carte Grise"
-                        />
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400" title="Permis" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400" title="Carte Grise" />
                       </div>
                     </div>
                   </td>
@@ -241,6 +247,16 @@ const VehiclesPage = () => {
                     </div>
                   </td>
 
+                  {/* Dernier Actif (خانة مستقلة تماماً) */}
+                  <td className="px-6 py-5">
+                    <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 w-fit">
+                      <Clock size={14} className="text-red-500" />
+                      <span className="text-xs font-bold text-slate-700">
+                        {formatLastActive(v.last_active_at)}
+                      </span>
+                    </div>
+                  </td>
+
                   {/* Finance */}
                   <td className="px-6 py-5">
                     <div className="bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 w-fit">
@@ -254,11 +270,9 @@ const VehiclesPage = () => {
                     </div>
                   </td>
 
-                  {/* Actions: Conditional Rendering */}
-                  {/* Actions: Conditional Rendering */}
+                  {/* Actions */}
                   <td className="px-8 py-5 text-right">
                     <div className="flex justify-end gap-2">
-                      {/* زر المراجعة يظهر للجميع إذا كانت الحالة sent */}
                       {v.status === "sent" && (
                         <Link href={`/dashboard/drivers/review/details?id=${v._id}`}>
                           <button className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-blue-700 transition-all shadow-md active:scale-95">
@@ -268,7 +282,6 @@ const VehiclesPage = () => {
                         </Link>
                       )}
 
-                      {/* زر التفاصيل يظهر فقط إذا لم تكن الحالة sent وشرط الرتبة محقق */}
                       {v.status !== "sent" &&
                         (user?.role === "admin" ||
                           user?.role === "super_admin") && (

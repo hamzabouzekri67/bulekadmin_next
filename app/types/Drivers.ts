@@ -17,7 +17,8 @@ export type DriverData =  {
   balance:number
   isAccountActive:boolean,
   notificationsToken:string,
-  postionsDriver: DriverPosition;
+  postionsDriver: DriverPosition
+  last_active_at:Date
 }
 
 export interface DriverPosition {
