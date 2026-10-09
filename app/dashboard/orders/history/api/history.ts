@@ -1,15 +1,13 @@
-
 import { Preferences } from "@capacitor/preferences";
 import { User } from "../../../../context/UserContext";
 
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
-const HISTORY_ORDER = process.env.NEXT_PUBLIC_HISTORY_ORDER
+const HISTORY_ORDER = process.env.NEXT_PUBLIC_HISTORY_ORDER;
 
 export async function GetOrdersHistory(user: User) {
   try {
     const { value: token } = await Preferences.get({ key: "token" });
-     const url = `${API_URL}${HISTORY_ORDER}`;
+    const url = `${API_URL}${HISTORY_ORDER}`;
 
     const res = await fetch(url, {
       method: "POST",
@@ -20,6 +18,8 @@ export async function GetOrdersHistory(user: User) {
       credentials: "include",
       body: JSON.stringify({
         id: user?.id,
+        role: user.role,
+        ville: user.ville,
       }),
     });
     if (res.ok) {

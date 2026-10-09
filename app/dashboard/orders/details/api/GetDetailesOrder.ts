@@ -4,6 +4,8 @@ import { Preferences } from "@capacitor/preferences";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const FETCH_ORDER = process.env.NEXT_PUBLIC_FETCH_ORDER;
+const ANNULE_ORDER = process.env.NEXT_PUBLIC_ANNULE_ORDER;
+
 
 export async function GetOrdersPending(
   user: User | null,
@@ -23,7 +25,7 @@ export async function GetOrdersPending(
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-   //   credentials: "include",
+      //   credentials: "include",
       body: JSON.stringify({
         ville: user?.ville,
         id: user?.id,
@@ -55,6 +57,44 @@ export async function GetOrdersPending(
   } catch (error) {
     //console.log(error);
     setLoading(false);
+    return null;
+  }
+}
+
+export async function AnnuleOrder(
+  user: User | null,
+  orderId: string | null,
+  selectedReason: string,
+) {
+  try {
+    const url = `${API_URL}${ANNULE_ORDER}`;
+    const { value: token } = await Preferences.get({ key: "token" });
+
+    console.log(url);
+    
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      //   credentials: "include",
+      body: JSON.stringify({
+        selectedReason:selectedReason,
+        id: user?.id,
+        orderId: orderId,
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data;
+    }
+    // setLoading(false);
+    return null;
+  } catch (error) {
+    console.log(error);
+    // setLoading(false);
     return null;
   }
 }

@@ -17,7 +17,8 @@ import {
   CreditCard,
   Sparkles,
   Percent,
-  History
+  History,
+  Phone,
 } from "lucide-react";
 
 export default function AppBar() {
@@ -119,6 +120,11 @@ export default function AppBar() {
         href: "/dashboard/admins",
         label: "Admins",
         icon: <ShieldCheck size={20} />,
+      },
+      {
+        href: "/dashboard/contacts",
+        label: "Service & Clients",
+        icon: <Phone size={20} />,
       },
     );
   }

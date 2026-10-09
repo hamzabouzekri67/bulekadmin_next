@@ -1,7 +1,7 @@
 "use client";
 import React, { Suspense, useCallback } from "react";
 import { useState, useEffect, useRef } from "react";
-import { GetOrdersPending } from "./api/GetDetailesOrder";
+import { AnnuleOrder, GetOrdersPending } from "./api/GetDetailesOrder";
 import { useParams, useSearchParams } from "next/navigation";
 import { useUser } from "@/app/context/UserContext";
 import { Order, Driver, ListOrder } from "@/app/types/Orders";
@@ -44,10 +44,32 @@ const OrderDetails = () => {
   const [apiResponse, setApiResponse] = useState(null);
 
   const [isSearchWarningOpen, setIsSearchWarningOpen] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
   const [isBtnLoading, setIsBtnLoading] = useState(false);
 
-  //console.log(user);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedReason, setSelectedReason] = useState("");
+
+  const cancelReasons = [
+    "Erreur dans le contenu de la commande (خطأ في محتويات الطلب أو تفاصيله)",
+    "Affluence excessive / Cuisine débordée (ضغط كبير في المطبخ / عدم القدرة على تلبية الطلب حالياً)",
+    "Client injoignable par téléphone (الزبون لا يرد على الاتصالات الهاتفية لتأكيد الطلب)",
+    "Adresse de livraison incorrecte ou hors zone (عنوان التوصيل غير صحيح أو خارج نطاق التغطية)",
+    "Demande du client d'annuler la commande (الزبون طلب إلغاء الطلب بنفسه)",
+  ];
+
+  const handleCancelOrder = async (_id: string | undefined) => {
+    if (!selectedReason || !_id) return;
+
+    const data = await AnnuleOrder(user, _id, selectedReason);
+    console.log("data:", data);
+
+    if (data?.status && data?.result) {
+      setDetailesOrders((prev) =>
+        prev ? { ...prev, status: data.result.status } : null,
+      );
+    }
+    setShowCancelModal(false);
+  };
 
   const reloadOrderData = useCallback(() => {
     if (!user || !validOrderId || !isValidObjectId(validOrderId)) return;
@@ -87,10 +109,10 @@ const OrderDetails = () => {
       socket?.off("searchExpired");
       socket?.on("searchExpired", (e) => {
         console.log(e);
-        
+
         if (!e) return;
         setCurrentDriver([]);
-      //  setIsBtnLoading(false);
+        //  setIsBtnLoading(false);
       });
       //acceptedOrder_with_Driver
       socket?.off("send_admin");
@@ -135,30 +157,94 @@ const OrderDetails = () => {
             Products • Delivery with Bulek Eats
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button className="w-full sm:w-auto px-4 py-2 border border-gray-300 bg-white rounded-lg flex items-center justify-center gap-2 text-sm text-gray-700 hover:bg-gray-100">
-            Export
-          </button>
-          <button className="w-full sm:w-auto px-4 py-2 border border-gray-300 bg-white rounded-lg flex items-center justify-center gap-2 text-sm text-gray-700 hover:bg-gray-100">
-            Print
-          </button>
-          {
-            <Link
-              className="bg-gray-600 text-white text-sm py-2 px-4 rounded-md hover:bg-gray-700 transition-colors flex items-center justify-center"
-              href={{
-                pathname: `/store/details`,
-                query: {
-                  id: detailesOrders?.restaurantId?._id,
-                  orderId: detailesOrders?._id || detailesOrders?.id,
-                },
-              }}
-            >
-              Mettre à jour
-            </Link>
-          }
-        </div>
-      </div>
 
+        {/* تظهر الأزرار فقط إذا لم تكن الحالة pending ولم تكن rejected */}
+        {detailesOrders?.status !== "pending" &&
+          detailesOrders?.status !== "rejected" && (
+            <div className="flex flex-wrap gap-2">
+              {/* زر الإلغاء يظهر فقط إذا كان هناك سائق متوفر (Driver موجود) */}
+              {detailesOrders?.driver && (
+                <button
+                  onClick={() => setShowCancelModal(true)}
+                  className="sm:w-auto px-4 py-2 border border-red-200 bg-red-50 rounded-lg flex items-center justify-center gap-2 text-sm text-red-600 hover:bg-red-100 transition-colors"
+                >
+                  Annulé
+                </button>
+              )}
+
+              {/* زر التحديث يظهر بشكل عادي حسب الشروط العامة */}
+              <Link
+                className="bg-gray-600 text-white text-sm py-2 px-4 rounded-md hover:bg-gray-700 transition-colors flex items-center justify-center"
+                href={{
+                  pathname: `/store/details`,
+                  query: {
+                    id: detailesOrders?.restaurantId?._id,
+                    orderId: detailesOrders?._id || detailesOrders?.id,
+                  },
+                }}
+              >
+                Mettre à jour
+              </Link>
+            </div>
+          )}
+        {/* نافذة اختيار سبب الإلغاء (Modal) */}
+        {showCancelModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4">
+              <h3 className="text-lg font-bold text-gray-800">
+                Sélectionner le motif d&apos;annulation
+              </h3>
+              <p className="text-sm text-gray-500">
+                Veuillez choisir la raison pour laquelle vous souhaitez annuler
+                cette commande :
+              </p>
+
+              <div className="space-y-2">
+                {cancelReasons.map((reason, index) => (
+                  <label
+                    key={index}
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                      selectedReason === reason
+                        ? "border-red-500 bg-red-50/50"
+                        : "border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="cancelReason"
+                      value={reason}
+                      checked={selectedReason === reason}
+                      onChange={(e) => setSelectedReason(e.target.value)}
+                      className="text-red-600 focus:ring-red-500"
+                    />
+                    <span className="text-sm text-gray-700">{reason}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <button
+                  onClick={() => setShowCancelModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-100"
+                >
+                  Fermer
+                </button>
+                <button
+                  onClick={() => handleCancelOrder(detailesOrders?._id)}
+                  disabled={!selectedReason}
+                  className={`px-4 py-2 rounded-lg text-sm text-white transition-colors ${
+                    selectedReason
+                      ? "bg-red-600 hover:bg-red-700"
+                      : "bg-gray-300 cursor-not-allowed"
+                  }`}
+                >
+                  Confirmer l&apos;annulation
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Left Column */}
@@ -659,14 +745,18 @@ const OrderDetails = () => {
                 </div>
 
                 {/* زر إعادة البحث في حال حدوث عطل للسائق الحالي */}
-                <div className="mt-2 pt-3 border-t border-gray-100">
-                  <button
-                    onClick={() => setIsSearchWarningOpen(true)}
-                    className="w-full py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-amber-200"
-                  >
-                    ⚠️ Panne / Problème chauffeur (Rechercher un autre)
-                  </button>
-                </div>
+                {detailesOrders?.status !== "rejected" &&
+                  detailesOrders?.status !== "completed" &&
+                  detailesOrders?.status !== "Incompleted" && (
+                    <div className="mt-2 pt-3 border-t border-gray-100">
+                      <button
+                        onClick={() => setIsSearchWarningOpen(true)}
+                        className="w-full py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-amber-200"
+                      >
+                        ⚠️ Panne / Problème chauffeur (Rechercher un autre)
+                      </button>
+                    </div>
+                  )}
               </div>
             </div>
           ) : (
@@ -677,7 +767,7 @@ const OrderDetails = () => {
               <button
                 onClick={async () => {
                   if (!detailesOrders) return;
-                 // setIsBtnLoading(true);
+                  // setIsBtnLoading(true);
                   const checkSearch = await SearchDriver(detailesOrders);
 
                   const result = checkSearch.result || checkSearch;

@@ -11,7 +11,9 @@ export type Order = {
   message?: unknown;
   walletId?: string;
   tmpToken?: string;
-  assistedBy?: string;
+  assistedBy?: {
+    userName?: string;
+  };
   ville: string;
   promoCode: string;
   discountmodel: string;

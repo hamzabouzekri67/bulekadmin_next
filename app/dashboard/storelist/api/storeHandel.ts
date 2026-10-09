@@ -1,5 +1,5 @@
 import { User } from "@/app/context/UserContext";
-import { StoreData } from "@/app/types/store";
+import { StoreData, Workday } from "@/app/types/store";
 import { Preferences } from "@capacitor/preferences";
 import { useRouter } from "next/navigation";
 
@@ -7,6 +7,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const LIST_STORE = process.env.NEXT_PUBLIC_LIST_STORE;
 const UPDATE_STATUS_STORE = process.env.NEXT_PUBLIC_UPDATE_STATUS_STORE;
 const ACCEPTED_STORE_SENT = process.env.NEXT_PUBLIC_ACCEPTED_STORE_SENT;
+const UPDATE_STORE = process.env.NEXT_PUBLIC_UPDATE_STORE;
 
 export async function GetStoreList(
   user: User,
@@ -112,6 +113,44 @@ export async function acceptedStoreSent(v: StoreData, status: string) {
   } catch (error) {
     //console.log(error);
 
+    return null;
+  }
+}
+
+// أضف هذه الدالة في ملف api/storeHandel.ts
+export async function updateStoreDetails(
+  storeId: string,
+  updateData: {
+    phoneNumber: string;
+    timeP: string;
+    workdays: Workday[];
+    secondaryPhones: string[];
+  },
+) {
+  try {
+    const url = `${API_URL}${UPDATE_STORE}`;
+    const { value: token } = await Preferences.get({ key: "token" });
+    const response = await fetch(`${url}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        storeId: storeId,
+        ...updateData,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Erreur lors de la mise à jour du magasin");
+    }
+
+    const data = await response.json();
+    return data; // إرجاع البيانات المحدثة من السيرفر
+  } catch (error) {
+    console.error("API Error:", error);
+    alert("Échec de la mise à jour");
     return null;
   }
 }

@@ -7,9 +7,13 @@ import OrderEnRoute from "./components/OrderEnRoute";
 import { useOrderDetails } from "./controller/useOrderController";
 import { Users, Truck, Utensils, RefreshCw } from "lucide-react";
 import { useState } from "react";
+import { useUser } from "@/app/context/UserContext";
+import NewAutoOrders from "./components/autoAccepted";
 
 export default function Home() {
-  const { newOrders, myOrders, orderEnCours, orderEnRoute, stats, refetch } =
+  const { user } = useUser();
+
+  const { newOrders, myOrders, orderEnCours, orderEnRoute,newAutoOrders, stats, refetch } =
     useOrderDetails();
 
   const [loading, setLoading] = useState(false);
@@ -18,6 +22,10 @@ export default function Home() {
     await refetch();
     setTimeout(() => setLoading(false), 1200);
   };
+
+  console.log(user);
+
+  if (!user) return;
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -65,9 +73,17 @@ export default function Home() {
 
       {/* قسم الطلبات */}
       <div className="space-y-6">
-        <NewOrders newOrders={newOrders} />
-        <MyOrders myOrders={myOrders} />
+        {/* إذا كان autoAccepted مفعلاً، نعرض OrderEncours وفيها البيانات، وإلا نعرض NewOrders */}
+        {user.autoAccepted ? (
+          <NewAutoOrders newAutoOrders={newAutoOrders} />
+        ) : (
+          <NewOrders newOrders={newOrders} />
+        )}
+
+        {!user.autoAccepted && <MyOrders myOrders={myOrders} />}
+
         <OrderEncours orderEncours={orderEnCours} />
+
         <OrderEnRoute orderEnRoute={orderEnRoute} />
       </div>
     </div>

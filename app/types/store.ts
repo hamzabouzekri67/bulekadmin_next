@@ -59,5 +59,6 @@ export interface StoreData {
   isFeatured: boolean;
   campaignStart?: string;
   campaignEnd?: string;
+  secondaryPhones:string[]
   __v?: number;
 }

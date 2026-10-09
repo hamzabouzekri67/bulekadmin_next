@@ -25,6 +25,8 @@ export function useOrderDetails() {
     setOrderEnCours,
     orderEnRoute,
     setOrderEnRoute,
+    newAutoOrders,
+    setnewAutoOrders,
   } = useOrders();
   const { socket, ready } = useSocket();
   const didFetch = useRef(false);
@@ -44,6 +46,7 @@ export function useOrderDetails() {
       setmyOrders,
       setOrderEnCours,
       setOrderEnRoute,
+      setnewAutoOrders,
       router,
       setStats,
     );
@@ -106,8 +109,8 @@ export function useOrderDetails() {
       });
     }
 
-  //  if (didFetch.current) return;
-  //  didFetch.current = true;
+    //  if (didFetch.current) return;
+    //  didFetch.current = true;
     if (!didFetch.current) {
       didFetch.current = true;
       loadData();
@@ -118,6 +121,7 @@ export function useOrderDetails() {
     myOrders,
     orderEnCours,
     orderEnRoute,
+    newAutoOrders,
     stats,
     refetch: loadData,
   };
@@ -130,6 +134,7 @@ const fetchOrders = async (
   setmyOrders: (val: Order[]) => void,
   setOrderEnCours: (val: Order[]) => void,
   setOrderEnRoute: (val: Order[]) => void,
+  setnewAutoOrders : (val: Order[]) => void,
   router: ReturnType<typeof useRouter>,
   setStats: Dispatch<
     SetStateAction<{
@@ -173,6 +178,7 @@ const fetchOrders = async (
   setmyOrders(myOrder);
   setOrderEnCours(enCours);
   setOrderEnRoute(enRoute);
+  setnewAutoOrders(pending)
   setStats({
     usersCount: orders.result.stats.usersCount || 0,
     driversCount: orders.result.stats.driversCount || 0,

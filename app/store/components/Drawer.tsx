@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Menu, Plus, X, Pencil, Trash2, GripVertical } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCategories } from "@/app/context/CategoryContext";
-import { addCatg, deleteCatg, updateCatg } from "../api/GetProducts";
+import { addCatg, deleteCatg, updateCatg, updateCategoriesOrder } from "../api/GetProducts"; // تأكد من استيراد دالة الحفظ
 import { Category } from "@/app/types/Orders";
 import { ParsedUrlQueryInput } from "querystring";
 
@@ -13,7 +13,6 @@ export default function Drawer() {
   const [isMobile, setIsMobile] = useState(false);
   const [ready, setReady] = useState(false);
 
-  // States الخاصة بالنافذة المنبثقة (Modal) للإضافة والتعديل
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
@@ -29,14 +28,11 @@ export default function Drawer() {
 
   const { categories, loading, fetchCategories, order, isCategoryDeletable } = useCategories();
 
-  // حالة محلية للفئات لكي تتحدث الواجهة (UI) فوراً عند السحب والإفلات
   const [localCategories, setLocalCategories] = useState<Category[]>([]);
   
-  // مراجع لتتبع العنصر الذي يتم سحبه (سواء بالماوس أو باللمس)
   const draggedItemIndex = useRef<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-  // تحديث الحالة المحلية كلما جلبنا الفئات من الـ Context مع فصل دقيق للعروض
   useEffect(() => {
     if (categories) {
       const offers = categories.filter((cat) => cat.offer === true);
@@ -78,18 +74,54 @@ export default function Drawer() {
     setShowModal(true);
   };
 
-  // دالة مشتركة لتنفيذ عملية إعادة الترتيب
-  const moveItem = (sourceIndex: number, targetIndex: number) => {
-    if (sourceIndex === targetIndex || sourceIndex < 0 || targetIndex < 0 || targetIndex >= localCategories.length) return;
+  // دالة مساعدة لتنفيذ إعادة الترتيب مع الحفاظ على العروض في الأعلى
+  const getUpdatedListAfterMove = (sourceIndex: number, targetIndex: number): Category[] | null => {
+    if (sourceIndex === targetIndex || sourceIndex < 0 || targetIndex < 0 || targetIndex >= localCategories.length) return null;
 
     const updatedList = [...localCategories];
     const [movedItem] = updatedList.splice(sourceIndex, 1);
-    updatedList.splice(targetIndex, 0, movedItem);
 
-    setLocalCategories(updatedList);
+    let finalTargetIndex = targetIndex;
+    if (sourceIndex < targetIndex) {
+      if (targetIndex === localCategories.length - 1) {
+        finalTargetIndex = targetIndex;
+      } else {
+        finalTargetIndex = targetIndex - 1;
+      }
+    }
+
+    updatedList.splice(finalTargetIndex, 0, movedItem);
+
+    const offers = updatedList.filter((cat) => cat.offer === true);
+    const normals = updatedList.filter((cat) => !cat.offer);
+
+    return [...offers, ...normals];
   };
 
-  // دوال التعامل مع الماوس (Desktop Drag and Drop)
+  // دالة إرسال الترتيب الجديد إلى قاعدة البيانات
+  const saveNewOrderToDatabase = async (newList: Category[]) => {
+    try {
+      const categoryIds = newList.map((cat) => cat._id);
+      await updateCategoriesOrder(id, categoryIds);
+    } catch (error) {
+    
+      fetchCategories(validOrderId, orderId);
+    }
+  };
+
+  const handleDrop = async (targetIndex: number) => {
+    const sourceIndex = draggedItemIndex.current;
+    if (sourceIndex !== null) {
+      const updatedList = getUpdatedListAfterMove(sourceIndex, targetIndex);
+      if (updatedList) {
+        setLocalCategories(updatedList);
+        await saveNewOrderToDatabase(updatedList); // <--- الحفظ الفعلي في الباك اند
+      }
+    }
+    draggedItemIndex.current = null;
+    setDragOverIndex(null);
+  };
+
   const handleDragStart = (index: number) => {
     draggedItemIndex.current = index;
   };
@@ -99,21 +131,11 @@ export default function Drawer() {
     setDragOverIndex(index);
   };
 
-  const handleDrop = (targetIndex: number) => {
-    const sourceIndex = draggedItemIndex.current;
-    if (sourceIndex !== null) {
-      moveItem(sourceIndex, targetIndex);
-    }
-    draggedItemIndex.current = null;
-    setDragOverIndex(null);
-  };
-
   const handleDragEnd = () => {
     draggedItemIndex.current = null;
     setDragOverIndex(null);
   };
 
-  // دوال التعامل مع اللمس (Mobile Touch Drag and Drop)
   const handleTouchStart = (index: number) => {
     draggedItemIndex.current = index;
   };
@@ -130,11 +152,15 @@ export default function Drawer() {
     }
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = async () => {
     const sourceIndex = draggedItemIndex.current;
     const targetIndex = dragOverIndex;
     if (sourceIndex !== null && targetIndex !== null) {
-      moveItem(sourceIndex, targetIndex);
+      const updatedList = getUpdatedListAfterMove(sourceIndex, targetIndex);
+      if (updatedList) {
+        setLocalCategories(updatedList);
+        await saveNewOrderToDatabase(updatedList); // <--- الحفظ الفعلي في الباك اند للموبايل
+      }
     }
     draggedItemIndex.current = null;
     setDragOverIndex(null);
@@ -251,9 +277,7 @@ export default function Drawer() {
     const hasProducts = cat.products && cat.products.length > 0;
 
     if (hasProducts) {
-      alert(
-        "لا يمكن حذف هذه الفئة لأنها تحتوي على منتجات نشطة. قم بنقل أو حذف المنتجات أولاً.",
-      );
+      alert("لا يمكن حذف هذه الفئة لأنها تحتوي على منتجات نشطة.");
       return;
     }
 
@@ -270,7 +294,6 @@ export default function Drawer() {
 
   return (
     <>
-      {/* زر الموبايل فقط */}
       {isMobile && (
         <button
           onClick={() => setOpen(true)}
@@ -281,7 +304,6 @@ export default function Drawer() {
         </button>
       )}
 
-      {/* Overlay للموبايل */}
       {isMobile && isDrawerOpen && (
         <div
           onClick={() => setOpen(false)}
@@ -289,7 +311,6 @@ export default function Drawer() {
         />
       )}
 
-      {/* Drawer */}
       {ready && (
         <aside
           className={`
@@ -297,7 +318,7 @@ export default function Drawer() {
               bg-red-600 text-white border-r border-gray-200
               transform transition-transform duration-300 flex flex-col justify-between
               ${isDrawerOpen ? "translate-x-0" : "-translate-x-full"}
-      `}
+        `}
         >
           <div className="overflow-y-auto flex-1 text-right">
             <div className="p-4 border-b border-gray-200">
@@ -354,13 +375,11 @@ export default function Drawer() {
                             : "hover:bg-red-500 text-white"
                       } ${cat.status == "pause" ? "opacity-50" : ""}`}
                     >
-                      {/* عرض اسم الفئة في سطر واحد كامل */}
                       <span className="block truncate" title={cat.category}>
-                        {cat.category}
+                        {cat.category} {cat.offer && "⭐"}
                       </span>
                     </Link>
 
-                    {/* مقبض السحب (Drag Handle) يدعم الماوس واللمس في أقصى اليسار */}
                     <div 
                       title="اضغط واسحب لترتيب الفئة"
                       className="absolute left-1.5 top-3 p-1 text-red-200 hover:text-white cursor-grab active:cursor-grabbing flex items-center"
@@ -368,9 +387,7 @@ export default function Drawer() {
                       <GripVertical size={16} />
                     </div>
 
-                    {/* أزرار التعديل والحذف الجانبية */}
-                    <div className="absolute left-7 top-3 flex items-center gap-0.5 bg-red-700/80 backdrop-blur-xs px-1 py-0.5 rounded-lg shadow-sm">
-                      {/* زر التعديل */}
+                    <div className="absolute left-7 top-3 flex items-center gap-0.5 bg-red-700/85 px-1 py-0.5 rounded-lg shadow-sm">
                       <button
                         onClick={(e) => {
                           e.preventDefault();
@@ -382,7 +399,6 @@ export default function Drawer() {
                         <Pencil size={13} />
                       </button>
 
-                      {/* زر الحذف يظهر فقط إذا كان متاحاً */}
                       {canDelete && (
                         <button
                           onClick={(e) => handleDeleteCategory(cat, e)}
@@ -399,16 +415,13 @@ export default function Drawer() {
             </nav>
           </div>
 
-          {/* القسم السفلي الثابت */}
           <div className="p-4 border-t border-red-600 bg-red-600">
             <button
               onClick={handleOpenAddModal}
               className="flex items-center justify-center gap-2 w-full py-3 px-4 
-                       bg-linear-to-r from-gray-200 to-gray-100
-                       hover:from-red-600 hover:to-red-600 
+                       bg-gray-100 hover:bg-white
                        text-black font-bold rounded-xl shadow-md 
-                       hover:shadow-lg active:scale-[0.98] 
-                       transition-all duration-200 text-sm"
+                       active:scale-[0.98] transition-all duration-200 text-sm"
             >
               <Plus size={18} />
               <span>إضافة فئة جديدة</span>
@@ -417,16 +430,15 @@ export default function Drawer() {
         </aside>
       )}
 
-      {/* نافذة تأكيد الحذف */}
       {showDeleteModal && categoryToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 text-right">
           <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+            className="absolute inset-0 bg-black/60 backdrop-blur-xs"
             onClick={() => {
               if (!isSubmitting) setShowDeleteModal(false);
             }}
           />
-          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl z-10 border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl z-10 border border-gray-100">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4">
               <Trash2 className="h-6 w-6 text-red-600" />
             </div>
@@ -434,26 +446,22 @@ export default function Drawer() {
               <h3 className="text-lg font-bold text-gray-900 mb-2">
                 تأكيد حذف الفئة
               </h3>
-              <p className="text-sm text-gray-500 leading-relaxed px-2">
-                هل أنت متأكد تماماً من حذف فئة{" "}
-                <span className="font-bold text-gray-800">
-                  &quot;{categoryToDelete.category}&quot;
-                </span>{" "}
-                ؟
+              <p className="text-sm text-gray-500">
+                هل أنت متأكد من حذف فئة <span className="font-bold text-gray-800">&quot;{categoryToDelete.category}&quot;</span> ؟
               </p>
             </div>
             <div className="flex gap-3 justify-center">
               <button
                 disabled={isSubmitting}
                 onClick={handleConfirmDelete}
-                className="flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.98] disabled:opacity-50 text-sm"
+                className="flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md transition text-sm"
               >
-                {isSubmitting ? "جاري الحذف..." : "نعم، احذف الفئة"}
+                {isSubmitting ? "جاري الحذف..." : "نعم، احذف"}
               </button>
               <button
                 disabled={isSubmitting}
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 py-2.5 px-4 bg-gray-150 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition text-sm text-center"
+                className="flex-1 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition text-sm text-center"
               >
                 إلغاء
               </button>
@@ -462,27 +470,24 @@ export default function Drawer() {
         </div>
       )}
 
-      {/* النافذة المنبثقة المشتركة (للإضافة والتعديل) */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 text-right">
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => {
               if (!isSubmitting) setShowModal(false);
             }}
           />
 
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl z-10 border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl z-10 border border-gray-100">
             <div className="flex justify-between items-center flex-row-reverse border-b pb-3 mb-4">
               <h3 className="text-lg font-bold text-gray-800">
-                {modalMode === "add"
-                  ? "إضافة فئة منتجات جديدة"
-                  : "تعديل اسم الفئة"}
+                {modalMode === "add" ? "إضافة فئة جديدة" : "تعديل الفئة"}
               </h3>
               <button
                 disabled={isSubmitting}
                 onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition"
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg"
               >
                 <X size={20} />
               </button>
@@ -497,27 +502,21 @@ export default function Drawer() {
                 disabled={isSubmitting}
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder="مثال: مشويات، بيتزا، مشروبات..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition text-sm bg-gray-50 text-black"
+                placeholder="مثال: مشويات، بيتزا..."
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 outline-none text-sm bg-gray-50 text-black"
                 dir="rtl"
                 autoFocus
               />
             </div>
 
-            {/* خيار تعيين كـ عرض خاص */}
             <div className="mb-4 bg-gray-50 p-3 rounded-xl border border-gray-200 flex items-center justify-between flex-row-reverse">
               <div className="text-right">
-                <label
-                  className="block text-sm font-bold text-gray-700 cursor-pointer"
-                  htmlFor="offer-checkbox"
-                >
+                <label className="block text-sm font-bold text-gray-700 cursor-pointer" htmlFor="offer-checkbox">
                   تعيين كـ عرض خاص (Offer)
                 </label>
-                <span className="text-xs text-gray-400">
-                  تفعيل هذا الخيار يضع الفئة في قسم العروض
-                </span>
+                <span className="text-xs text-gray-400">يبقى دائماً في الأعلى</span>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer select-none">
+              <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   id="offer-checkbox"
@@ -526,24 +525,18 @@ export default function Drawer() {
                   onChange={(e) => setIsOffer(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
               </label>
             </div>
 
-            {/* خيار حالة الفئة نشطة */}
             <div className="mb-6 bg-gray-50 p-3 rounded-xl border border-gray-200 flex items-center justify-between flex-row-reverse">
               <div className="text-right">
-                <label
-                  className="block text-sm font-bold text-gray-700 cursor-pointer"
-                  htmlFor="active-checkbox"
-                >
+                <label className="block text-sm font-bold text-gray-700 cursor-pointer" htmlFor="active-checkbox">
                   حالة الفئة (نشطة)
                 </label>
-                <span className="text-xs text-gray-400">
-                  إيقاف هذا الخيار يخفي الفئة ومنتجاتها مؤقتاً
-                </span>
+                <span className="text-xs text-gray-400">إظهار أو إخفاء الفئة</span>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer select-none">
+              <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   id="active-checkbox"
@@ -552,28 +545,23 @@ export default function Drawer() {
                   onChange={(e) => setIsActive(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
               </label>
             </div>
 
-            {/* أزرار التحكم */}
             <div className="flex gap-3 justify-start">
               <button
                 disabled={isSubmitting}
                 onClick={handleConfirmSaveCategory}
                 className="flex-1 py-2.5 px-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow transition disabled:opacity-50 text-sm"
               >
-                {isSubmitting
-                  ? "جاري الحفظ..."
-                  : modalMode === "add"
-                    ? "تأكيد الإضافة"
-                    : "حفظ التعديلات"}
+                {isSubmitting ? "جاري الحفظ..." : "حفظ"}
               </button>
 
               <button
                 disabled={isSubmitting}
                 onClick={() => setShowModal(false)}
-                className="py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold rounded-xl transition text-sm"
+                className="py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold rounded-xl text-sm"
               >
                 إلغاء
               </button>

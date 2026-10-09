@@ -12,6 +12,9 @@ const COMPELETED_STORE_PROFILE =
   process.env.NEXT_PUBLIC_COMPELETED_STORE_PROFILE;
 
 const GET_TAGS = process.env.NEXT_PUBLIC_GET_TAGS;
+
+const SORTY_CATG = process.env.NEXT_PUBLIC_SORTY_CATG;
+
 export async function checkStatusStore(id: string | string[]) {
   try {
     const url = `${API_URL}${CHECK_STATUS_STORE}`;
@@ -227,5 +230,31 @@ export async function getTags() {
     }
   } catch (error) {
     return false;
+  }
+}
+
+// مثال داخل ملف GetProducts.ts
+export async function updateCategoriesOrder(
+  storeId: string,
+  categoryIds: string[],
+) {
+  try {
+    const url = `${API_URL}${SORTY_CATG}`;
+    const { value: token } = await Preferences.get({ key: "token" });
+    
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ categoryIds , storeId  }),
+    });
+
+    if (!response.ok) throw new Error("فشل تحديث الترتيب");
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating categories order:", error);
+    throw error;
   }
 }

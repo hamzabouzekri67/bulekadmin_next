@@ -27,6 +27,7 @@ export type User = {
   notificationsToken: string;
   balance: number;
   currency: string;
+  autoAccepted:boolean
 };
 
 type UserContextType = {
