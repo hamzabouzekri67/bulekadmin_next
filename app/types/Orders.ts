@@ -58,12 +58,14 @@ export type Order = {
   discountSettings: DiscountSettings;
   deliverySettings: DeliverySettings;
   discountAmount: number;
-  grandTotal: number;
   client: {
     firstName?: string;
     lastName?: string;
     phone:string
   };
+  newdriverFees:number,
+  distance:number,
+  grandTotal:number
 };
 
 export type DiscountSponsoredBy = {
@@ -147,6 +149,7 @@ export type Restaurant = {
   notificationsToken?: string;
   postionsEtabliss: Positions;
   category: Category[];
+  secondaryPhones:string[]
 };
 export type Category = {
   _id: string;

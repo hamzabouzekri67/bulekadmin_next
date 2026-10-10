@@ -141,6 +141,9 @@ const OrderDetails = () => {
 
   if (loading) return <PageShimmer />;
 
+  // استخراج الأرقام الفرعية للمطعم إن وجدت
+  const secondaryPhones = detailesOrders?.restaurantId.secondaryPhones;
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8" dir="ltr">
       {/* Header Section */}
@@ -264,12 +267,28 @@ const OrderDetails = () => {
                 </p>
               </div>
             </div>
-            <div className="w-full sm:w-auto">
+            <div className="w-full sm:w-auto flex flex-col gap-1 items-end">
               <button className="px-3 py-1.5 border border-gray-200 bg-gray-50 rounded-md text-sm w-full sm:w-auto text-gray-700 hover:bg-gray-100">
                 <a href={`tel:+${detailesOrders?.restaurantId?.phoneNumber}`}>
                   +{detailesOrders?.restaurantId?.phoneNumber}
                 </a>
               </button>
+
+              {/* عرض الأرقام الفرعية للمطعم */}
+              {Array.isArray(secondaryPhones) ? (
+                secondaryPhones.map((phone: string, idx: number) => (
+                  <button
+                    key={idx}
+                    className="px-3 py-1 border border-gray-200 bg-gray-50 rounded-md text-xs text-gray-600 hover:bg-gray-100"
+                  >
+                    <a href={`tel:+${phone}`}>+{phone}</a>
+                  </button>
+                ))
+              ) : secondaryPhones ? (
+                <button className="px-3 py-1 border border-gray-200 bg-gray-50 rounded-md text-xs text-gray-600 hover:bg-gray-100">
+                  <a href={`tel:+${secondaryPhones}`}>+{secondaryPhones}</a>
+                </button>
+              ) : null}
             </div>
           </div>
 
@@ -324,8 +343,11 @@ const OrderDetails = () => {
             </div>
 
             <div className="w-full sm:w-auto bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 font-semibold text-gray-700 flex items-center justify-center">
-              {detailesOrders?.restaurantId?.postionsEtabliss?.coordinates &&
-              detailesOrders?.postionsClient?.coordinates ? (
+              {detailesOrders?.distance !== undefined &&
+              detailesOrders?.distance !== null ? (
+                <span>{detailesOrders.distance.toFixed()} m</span>
+              ) : detailesOrders?.restaurantId?.postionsEtabliss?.coordinates &&
+                detailesOrders?.postionsClient?.coordinates ? (
                 <span>
                   {getDistanceKm(
                     detailesOrders.restaurantId.postionsEtabliss.coordinates[0],
@@ -411,6 +433,25 @@ const OrderDetails = () => {
                       {detailesOrders?.feedelivery} {detailesOrders?.currency}
                     </p>
                   </div>
+
+                  {/* رسوم السائق الجديدة وتطبيق الرسوم (newdriverFees & feeApplications) */}
+                  {detailesOrders?.newdriverFees !== undefined &&
+                    detailesOrders?.newdriverFees !== null && (
+                      <div className="flex justify-between py-0.5 text-sm">
+                        <p className="text-gray-500">Nouveau frais chauffeur</p>
+                        <p className="font-medium text-gray-800">
+                          {detailesOrders.newdriverFees}{" "}
+                          {detailesOrders?.currency}
+                        </p>
+                      </div>
+                    )}
+
+                  {detailesOrders?.feeApplications && (
+                    <div className="flex justify-between py-0.5 text-xs text-gray-500">
+                      <span>Application des frais</span>
+                      <span>{detailesOrders.feeApplications}</span>
+                    </div>
+                  )}
 
                   {/* 3. تفاصيل وحالات التوصيل المجاني والتخفيضات */}
                   {detailesOrders!.offerfee >=
@@ -641,20 +682,19 @@ const OrderDetails = () => {
                     </div>
                   )}
 
-                  {/* السعر النهائي الكلي أسفل الفاتورة لتوثيق الصافي الإجمالي */}
+                  {/* السعر النهائي الكلي أسفل الفاتورة مع تضمين المجموع النهائي الشامل */}
+                  <div className="flex justify-between border-t border-gray-300 mt-2 pt-2 text-md font-bold">
+                    <p className="text-gray-900">Prix final (Store)</p>
+                    <p className="text-green-700 text-lg">
+                      {detailesOrders?.restaurantNetAmount}{" "}
+                      {detailesOrders?.currency}
+                    </p>
+                  </div>
+
                   <div className="flex justify-between border-t border-gray-300 mt-2 pt-2 text-md font-bold">
                     <p className="text-gray-900">Prix final (Net Global)</p>
                     <p className="text-green-700 text-lg">
-                      {detailesOrders
-                        ? (
-                            detailesOrders.restaurantNetAmount -
-                            detailesOrders.storTotalpromo -
-                            (detailesOrders.discountAmount *
-                              (detailesOrders.discountSettings?.sponsoredBy
-                                ?.restaurantShare || 0)) /
-                              100
-                          ).toFixed(2)
-                        : 0}{" "}
+                      {detailesOrders?.grandTotal}{" "}
                       {detailesOrders?.currency}
                     </p>
                   </div>
