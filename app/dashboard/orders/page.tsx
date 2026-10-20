@@ -5,16 +5,34 @@ import NewOrders from "./components/NewOrder";
 import OrderEncours from "./components/OrderEncours";
 import OrderEnRoute from "./components/OrderEnRoute";
 import { useOrderDetails } from "./controller/useOrderController";
-import { Users, Truck, Utensils, RefreshCw } from "lucide-react";
+import {
+  Users,
+  Truck,
+  Utensils,
+  RefreshCw,
+  AlertCircle,
+  ArrowRight,
+  UtensilsCrossed,
+} from "lucide-react";
 import { useState } from "react";
 import { useUser } from "@/app/context/UserContext";
 import NewAutoOrders from "./components/autoAccepted";
 
 export default function Home() {
+  const router = useRouter();
   const { user } = useUser();
 
-  const { newOrders, myOrders, orderEnCours, orderEnRoute,newAutoOrders, stats, refetch } =
-    useOrderDetails();
+  // قم بإضافة pendingMenuUpdates (أو الاسم المطابق لديك) من الـ Hook الخاص بالتحكم
+  const {
+    newOrders,
+    myOrders,
+    orderEnCours,
+    orderEnRoute,
+    newAutoOrders,
+    stats,
+    refetch,
+    pendingMenuUpdates = [], // تأكد من إرجاع قائمة التحديثات من useOrderDetails
+  } = useOrderDetails();
 
   const [loading, setLoading] = useState(false);
   const handleRefresh = async () => {
@@ -23,9 +41,7 @@ export default function Home() {
     setTimeout(() => setLoading(false), 1200);
   };
 
-  console.log(user);
-
-  if (!user) return;
+  if (!user) return null;
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -34,7 +50,7 @@ export default function Home() {
         <h1 className="text-2xl font-bold text-gray-800">لوحة التحكم</h1>
         <button
           onClick={handleRefresh}
-          className="p-3 bg-white rounded-full shadow-md border border-gray-100 active:scale-95 transition-transform"
+          className="p-3 bg-white rounded-full shadow-md border border-gray-100 active:scale-95 transition-transform cursor-pointer"
         >
           <RefreshCw
             className={loading ? "animate-spin text-red-500" : "text-gray-600"}
@@ -53,27 +69,58 @@ export default function Home() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <StatCard
           title="إجمالي المستخدمين"
-          value={stats.usersCount}
+          value={stats?.usersCount || 0}
           icon={<Users size={24} />}
           gradient="from-blue-500 to-blue-700"
         />
         <StatCard
           title="السائقين النشطين"
-          value={stats.driversCount}
+          value={stats?.driversCount || 0}
           icon={<Truck size={24} />}
           gradient="from-emerald-500 to-emerald-700"
         />
         <StatCard
           title="المطاعم المسجلة"
-          value={stats.restaurantsCount}
+          value={stats?.restaurantsCount || 0}
           icon={<Utensils size={24} />}
           gradient="from-orange-500 to-orange-700"
         />
       </div>
 
+      {Number(stats.totalProductsPending) > 0 && (
+        <div className="mb-8 p-5 bg-red-50 border-r-4 border-red-500 rounded-2xl shadow-sm border">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-red-500 text-white rounded-xl shadow-md animate-pulse">
+                <UtensilsCrossed size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-amber-900 flex items-center gap-2">
+                  طلب تحديث القائمة (Menu)
+                  <span className="bg-amber-200 text-amber-900 text-xs font-extrabold px-2.5 py-0.5 rounded-full">
+                    {stats.totalProductsPending} معلق
+                  </span>
+                </h3>
+                <p className="text-sm text-amber-700 mt-0.5">
+                  هناك مطاعم قامت بتعديل أسعار أو تفاصيل المنتجات وتنتظر
+                  المراجعة والاعتماد.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => router.push("/dashboard/orders/approvals")}
+              className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+            >
+              <span>مراجعة التعديلات</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* قسم الطلبات */}
       <div className="space-y-6">
-        {/* إذا كان autoAccepted مفعلاً، نعرض OrderEncours وفيها البيانات، وإلا نعرض NewOrders */}
+        {/* إذا كان autoAccepted مفعلاً، نعرض NewAutoOrders وفيها البيانات، وإلا نعرض NewOrders */}
         {user.autoAccepted ? (
           <NewAutoOrders newAutoOrders={newAutoOrders} />
         ) : (
@@ -103,7 +150,7 @@ function StatCard({ title, value, icon, gradient }: StatProps) {
     return Intl.NumberFormat("en-US", {
       notation: "compact",
       maximumFractionDigits: 1,
-    }).format(num);
+    }).format(num || 0);
   };
 
   return (
@@ -123,14 +170,14 @@ function StatCard({ title, value, icon, gradient }: StatProps) {
           </h3>
         </div>
         <div
-          className={`p-3 rounded-lg bg-linear-to-br ${gradient} text-white shadow-md group-hover:scale-110 transition-transform`}
+          className={`p-3 rounded-lg bg-gradient-to-br ${gradient} text-white shadow-md group-hover:scale-110 transition-transform`}
         >
           {icon}
         </div>
       </div>
 
       <div
-        className={`absolute -bottom-2 -right-2 w-16 h-16 bg-linear-to-br ${gradient} opacity-5 rounded-full`}
+        className={`absolute -bottom-2 -right-2 w-16 h-16 bg-gradient-to-br ${gradient} opacity-5 rounded-full`}
       />
     </div>
   );

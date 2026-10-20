@@ -15,11 +15,13 @@ type OrderContextType = {
   orderEnCours: Order[];
   orderEnRoute: Order[];
   newAutoOrders: Order[];
+  pendingMenuUpdates: Order[];
   setNewOrders: Dispatch<SetStateAction<Order[]>>;
   setmyOrders: Dispatch<SetStateAction<Order[]>>;
   setOrderEnCours: Dispatch<SetStateAction<Order[]>>;
   setOrderEnRoute: Dispatch<SetStateAction<Order[]>>;
   setnewAutoOrders: Dispatch<SetStateAction<Order[]>>;
+  setpendingMenuUpdates: Dispatch<SetStateAction<Order[]>>;
 };
 
 const OrdersContext = createContext<OrderContextType | null>(null);
@@ -30,6 +32,7 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
   const [orderEnCours, setOrderEnCours] = useState<Order[]>([]);
   const [orderEnRoute, setOrderEnRoute] = useState<Order[]>([]);
   const [newAutoOrders, setnewAutoOrders] = useState<Order[]>([]);
+  const [pendingMenuUpdates,setpendingMenuUpdates] = useState<Order[]>([]);
 
   return (
     <OrdersContext.Provider
@@ -39,11 +42,13 @@ export function OrdersProvider({ children }: { children: ReactNode }) {
         orderEnCours,
         orderEnRoute,
         newAutoOrders,
+        pendingMenuUpdates,
         setNewOrders,
         setmyOrders,
         setOrderEnCours,
         setOrderEnRoute,
-        setnewAutoOrders
+        setnewAutoOrders,
+        setpendingMenuUpdates,
       }}
     >
       {children}
