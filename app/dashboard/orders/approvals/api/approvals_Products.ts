@@ -21,6 +21,7 @@ export async function fetchPending(user: User | null) {
       credentials: "include",
       body: JSON.stringify({
         ville: user?.ville,
+        role: user?.role,
       }),
     });
     if (res.ok) {

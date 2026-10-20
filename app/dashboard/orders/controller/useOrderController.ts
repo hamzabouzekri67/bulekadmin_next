@@ -152,7 +152,7 @@ const fetchOrders = async (
 ) => {
   const orders = await GET(url, user);
 
-  console.log(orders);
+ // console.log(orders);
 
   if (orders.message === "Invalid Token") {
     localStorage.removeItem("token");
@@ -203,7 +203,7 @@ export async function GET(url: string, user: User) {
       },
       // credentials: "include",
 
-      body: JSON.stringify({ ville: user?.ville, id: user?.id }),
+      body: JSON.stringify({ ville: user?.ville, id: user?.id ,role:user.role}),
     });
     if (res.ok) {
       return await res.json();
