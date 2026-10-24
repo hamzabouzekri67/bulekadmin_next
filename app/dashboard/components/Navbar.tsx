@@ -19,6 +19,7 @@ import {
   Percent,
   History,
   Phone,
+  TicketPercent,
 } from "lucide-react";
 
 export default function AppBar() {
@@ -125,6 +126,11 @@ export default function AppBar() {
         href: "/dashboard/contacts",
         label: "Service & Clients",
         icon: <Phone size={20} />,
+      },
+      {
+        href: "/dashboard/promo",
+        label: "Codes promo",
+        icon: <TicketPercent size={20} />,
       },
     );
   }
