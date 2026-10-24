@@ -141,6 +141,22 @@ const OrderDetails = () => {
 
   if (loading) return <PageShimmer />;
 
+  const orderStatus = detailesOrders?.status;
+  const closedOrder =
+    orderStatus === "rejected" ||
+    orderStatus === "completed" ||
+    orderStatus === "Incompleted" ||
+    orderStatus === "incompleted" ||
+    orderStatus === "delivered";
+  const superCancel =
+    user?.role === "super_admin" && Boolean(detailesOrders) && !closedOrder;
+  const agentCancel =
+    user?.role !== "super_admin" &&
+    orderStatus !== "pending" &&
+    orderStatus !== "rejected" &&
+    Boolean(detailesOrders?.driver);
+  const showUpdate = orderStatus !== "pending" && orderStatus !== "rejected";
+
   // استخراج الأرقام الفرعية للمطعم إن وجدت
   const secondaryPhones = detailesOrders?.restaurantId.secondaryPhones;
 
@@ -161,12 +177,9 @@ const OrderDetails = () => {
           </p>
         </div>
 
-        {/* تظهر الأزرار فقط إذا لم تكن الحالة pending ولم تكن rejected */}
-        {detailesOrders?.status !== "pending" &&
-          detailesOrders?.status !== "rejected" && (
+        {(superCancel || agentCancel || showUpdate) && (
             <div className="flex flex-wrap gap-2">
-              {/* زر الإلغاء يظهر فقط إذا كان هناك سائق متوفر (Driver موجود) */}
-              {detailesOrders?.driver && (
+              {(superCancel || agentCancel) && (
                 <button
                   onClick={() => setShowCancelModal(true)}
                   className="sm:w-auto px-4 py-2 border border-red-200 bg-red-50 rounded-lg flex items-center justify-center gap-2 text-sm text-red-600 hover:bg-red-100 transition-colors"
@@ -175,7 +188,7 @@ const OrderDetails = () => {
                 </button>
               )}
 
-              {/* زر التحديث يظهر بشكل عادي حسب الشروط العامة */}
+              {showUpdate && (
               <Link
                 className="bg-gray-600 text-white text-sm py-2 px-4 rounded-md hover:bg-gray-700 transition-colors flex items-center justify-center"
                 href={{
@@ -188,6 +201,7 @@ const OrderDetails = () => {
               >
                 Mettre à jour
               </Link>
+              )}
             </div>
           )}
         {/* نافذة اختيار سبب الإلغاء (Modal) */}

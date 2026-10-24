@@ -139,6 +139,7 @@ export type Restaurant = {
   clientId: string;
   typeEtabliss: string;
   nameEtabliss: string;
+  ville?: string;
   timeP: string;
   phoneNumber: string;
   image: string;

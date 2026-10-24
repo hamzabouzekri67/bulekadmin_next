@@ -49,6 +49,7 @@ export default function OrderEncours({ orderEncours }: NewOrdersProps) {
                 </span>
                  <span className="font-medium text-xs">
                  {order.restaurantId.nameEtabliss}
+                 {order.restaurantId.ville ? ` · ${order.restaurantId.ville}` : ""}
                 </span>
               </div>
 

@@ -19,6 +19,25 @@ import {
 } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 import { Order } from "@/app/types/Orders";
+import { AnnuleOrder } from "../details/api/GetDetailesOrder";
+
+const CANCEL_REASONS = [
+  "Erreur dans le contenu de la commande (خطأ في محتويات الطلب أو تفاصيله)",
+  "Affluence excessive / Cuisine débordée (ضغط كبير في المطبخ / عدم القدرة على تلبية الطلب حالياً)",
+  "Client injoignable par téléphone (الزبون لا يرد على الاتصالات الهاتفية لتأكيد الطلب)",
+  "Adresse de livraison incorrecte ou hors zone (عنوان التوصيل غير صحيح أو خارج نطاق التغطية)",
+  "Demande du client d'annuler la commande (الزبون طلب إلغاء الطلب بنفسه)",
+];
+
+function isOpenOrder(status: string | undefined): boolean {
+  const value = (status ?? "").toLowerCase();
+  return (
+    value !== "rejected" &&
+    value !== "completed" &&
+    value !== "incompleted" &&
+    value !== "delivered"
+  );
+}
 
 interface VilleGroup {
   ville: string;
@@ -30,6 +49,9 @@ export default function OrderHistoryPage() {
   const [ordersData, setOrdersData] = useState<Order[] | VilleGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [cancelId, setCancelId] = useState<string | null>(null);
+  const [selectedReason, setSelectedReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
   
   // ولاية التبويب النشطة حالياً للـ Super Admin
   const [activeTab, setActiveTab] = useState<string>("");
@@ -57,6 +79,30 @@ export default function OrderHistoryPage() {
   }, [user]);
 
   const isSuperAdmin = user?.role === "super_admin";
+
+  const confirmCancel = async () => {
+    if (!cancelId || !selectedReason || cancelling) return;
+    setCancelling(true);
+    const data = await AnnuleOrder(user, cancelId, selectedReason);
+    if (data?.status) {
+      setOrdersData((current) => {
+        if (current.length > 0 && "orders" in current[0]) {
+          return (current as VilleGroup[]).map((group) => ({
+            ...group,
+            orders: group.orders.map((order) =>
+              order._id === cancelId ? { ...order, status: "rejected" } : order,
+            ),
+          }));
+        }
+        return (current as Order[]).map((order) =>
+          order._id === cancelId ? { ...order, status: "rejected" } : order,
+        );
+      });
+      setCancelId(null);
+      setSelectedReason("");
+    }
+    setCancelling(false);
+  };
 
   // دالة مساعدة للبحث داخل الطلب (تتضمن الولاية أيضاً للـ Admin/Agent)
   const matchesSearch = (order: Order) => {
@@ -241,6 +287,15 @@ export default function OrderHistoryPage() {
                         <Clock size={12} /> {order.status}
                       </span>
                     )}
+                    {isSuperAdmin && isOpenOrder(order.status) && (
+                      <button
+                        type="button"
+                        onClick={() => setCancelId(order._id)}
+                        className="mt-2 block px-2.5 py-1 rounded-lg text-xs font-bold text-red-600 bg-red-50 border border-red-100"
+                      >
+                        Annuler
+                      </button>
+                    )}
                   </td>
                 </tr>
               );
@@ -334,6 +389,57 @@ export default function OrderHistoryPage() {
         </div>
       ) : (
         renderOrdersTable(displayedContent as Order[])
+      )}
+
+      {cancelId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4">
+            <h3 className="text-lg font-bold text-gray-800">
+              Annuler la commande
+            </h3>
+            <div className="space-y-2">
+              {CANCEL_REASONS.map((reason) => (
+                <label
+                  key={reason}
+                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${
+                    selectedReason === reason
+                      ? "border-red-500 bg-red-50/50"
+                      : "border-gray-200"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="historyCancelReason"
+                    value={reason}
+                    checked={selectedReason === reason}
+                    onChange={(event) => setSelectedReason(event.target.value)}
+                  />
+                  <span className="text-sm text-gray-700">{reason}</span>
+                </label>
+              ))}
+            </div>
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <button
+                type="button"
+                onClick={() => {
+                  setCancelId(null);
+                  setSelectedReason("");
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600"
+              >
+                Fermer
+              </button>
+              <button
+                type="button"
+                onClick={confirmCancel}
+                disabled={!selectedReason || cancelling}
+                className="px-4 py-2 rounded-lg text-sm text-white bg-red-600 disabled:bg-gray-300"
+              >
+                Confirmer
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

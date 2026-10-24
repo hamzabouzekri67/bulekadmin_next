@@ -29,6 +29,7 @@ export default function orderEnRoute({orderEnRoute}:NewOrdersProps){
                 
                  <span className="font-medium text-xs">
                  {order.restaurantId.nameEtabliss}
+                 {order.restaurantId.ville ? ` · ${order.restaurantId.ville}` : ""}
                 </span>
               </div>
               

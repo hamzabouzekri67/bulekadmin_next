@@ -47,7 +47,14 @@ export default function Home() {
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* رأس الصفحة مع زر التحديث */}
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">لوحة التحكم</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">لوحة التحكم</h1>
+          {user.role === "super_admin" && (
+            <p className="text-sm text-gray-500 mt-1">
+              الطلبات غير المكتملة لكل الولايات
+            </p>
+          )}
+        </div>
         <button
           onClick={handleRefresh}
           className="p-3 bg-white rounded-full shadow-md border border-gray-100 active:scale-95 transition-transform cursor-pointer"
