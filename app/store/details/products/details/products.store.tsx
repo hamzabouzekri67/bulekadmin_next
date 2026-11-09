@@ -5,6 +5,7 @@ import { useCategories } from "@/app/context/CategoryContext";
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useMemo, Suspense } from "react";
 import { updateProducts, updateStatusProducts } from "./api/UpdateOrder";
+import { sortStoreProducts } from "@/app/store/api/GetProducts";
 import {
   ArrowDown,
   ArrowUp,
@@ -61,6 +62,7 @@ export function ProductsStore() {
   const [localProducts, setLocalProducts] = useState<Product[]>(
     category?.products || [],
   );
+  const [sortingProducts, setSortingProducts] = useState(false);
 
   const [openedProductId, setOpenedProductId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -95,6 +97,34 @@ export function ProductsStore() {
     }
   }, [category?.products, user]);
 
+  const moveProduct = async (index: number, direction: -1 | 1) => {
+    if (!storeId || !categoryId || sortingProducts) return;
+    const target = index + direction;
+    if (target < 0 || target >= localProducts.length) return;
+    const previous = localProducts;
+    const next = [...localProducts];
+    const [moved] = next.splice(index, 1);
+    next.splice(target, 0, moved);
+    setLocalProducts(next);
+    setSortingProducts(true);
+    try {
+      const data = await sortStoreProducts(
+        storeId,
+        categoryId,
+        next.map((product) => product._id),
+      );
+      if (!data?.status) {
+        setLocalProducts(previous);
+        alert(data?.message || "تعذر حفظ الترتيب");
+      }
+    } catch {
+      setLocalProducts(previous);
+      alert("تعذر الاتصال بالخادم");
+    } finally {
+      setSortingProducts(false);
+    }
+  };
+
   // بيانات المنتج الجاري إنشاؤه أو تعديله
   const [newProduct, setNewProduct] = useState({
     title: "",
@@ -102,6 +132,7 @@ export function ProductsStore() {
     image: "",
     description: "",
     comparePrice: 0,
+    maxCount: "",
     supplements: [] as NewSupplementType[],
   });
 
@@ -132,6 +163,7 @@ export function ProductsStore() {
       image: "",
       description: "",
       comparePrice: 0,
+      maxCount: "",
       supplements: [],
     });
     setImagePreview("");
@@ -149,6 +181,7 @@ export function ProductsStore() {
       image: product.image || "",
       description: product.desc || "",
       comparePrice: product.discount || 0,
+      maxCount: product.maxCount && product.maxCount > 0 ? String(product.maxCount) : "",
       supplements: (product.supplements as NewSupplementType[]) || [],
     });
     setImagePreview(product.image || "");
@@ -331,6 +364,7 @@ export function ProductsStore() {
       formData.append("description", newProduct.description ?? "");
       formData.append("price", newProduct.price);
       formData.append("discount", newProduct.comparePrice.toString());
+      formData.append("maxCount", String(Math.max(0, Math.floor(Number(newProduct.maxCount) || 0))));
       formData.append("supplements", JSON.stringify(newProduct.supplements));
 
       const response = await updateProducts(formData);
@@ -455,6 +489,27 @@ export function ProductsStore() {
           >
             <div className="flex flex-row items-center justify-between gap-3 md:gap-4">
               <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
+                {!orderId && (
+                  <div className="flex flex-col items-center shrink-0">
+                    <span className="text-[11px] font-black text-red-600">{index + 1}</span>
+                    <button
+                      type="button"
+                      disabled={sortingProducts || index === 0}
+                      onClick={() => void moveProduct(index, -1)}
+                      className="text-red-600 disabled:text-gray-200"
+                    >
+                      <ArrowUp size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={sortingProducts || index === localProducts.length - 1}
+                      onClick={() => void moveProduct(index, 1)}
+                      className="text-red-600 disabled:text-gray-200"
+                    >
+                      <ArrowDown size={14} />
+                    </button>
+                  </div>
+                )}
                 {/* صورة المنتج */}
                 <div className="relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 shadow-sm border border-gray-100 rounded-xl overflow-hidden">
                   {!!e.image ? (
@@ -493,6 +548,9 @@ export function ProductsStore() {
                   {!!e.desc && <ExpandableDesc text={e.desc} />}
                   <p className="text-orange-600 font-black text-base sm:text-lg md:text-xl flex items-center gap-0.5">
                     <span>{e.price}</span>
+                    {e.maxCount && e.maxCount > 0 ? (
+                      <span className="text-[10px] font-bold text-red-600 mr-2">الحد {e.maxCount}</span>
+                    ) : null}
                     <span className="text-[10px] sm:text-xs font-bold text-gray-500 mr-0.5">
                       {e.currency || user?.currency}
                     </span>
@@ -629,6 +687,24 @@ export function ProductsStore() {
                   }
                   className="w-full border p-2.5 rounded-xl focus:ring-2 focus:ring-orange-500 bg-white outline-none text-black text-sm transition-all"
                   placeholder="السعر بالـ DZD"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  الحد الأقصى للشراء
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={newProduct.maxCount}
+                  onChange={(e) =>
+                    setNewProduct({
+                      ...newProduct,
+                      maxCount: e.target.value.replace(/[^\d]/g, ""),
+                    })
+                  }
+                  className="w-full border p-2.5 rounded-xl focus:ring-2 focus:ring-orange-500 bg-white outline-none text-black text-sm transition-all"
+                  placeholder="بدون حد، مثال الزيت: 1"
                 />
               </div>
 

@@ -20,6 +20,9 @@ import {
   History,
   Phone,
   TicketPercent,
+  Tag,
+  GraduationCap,
+  ShoppingBasket,
 } from "lucide-react";
 
 export default function AppBar() {
@@ -78,62 +81,103 @@ export default function AppBar() {
 
   if (!mounted) return null;
 
-  const links = [
-    { href: "/dashboard/orders", label: "Commandes", icon: <List size={20} /> },
+  type NavLink = {
+    href: string;
+    label: string;
+    icon: React.ReactNode;
+    roles: string[];
+  };
+
+  const ALL_LINKS: NavLink[] = [
+    {
+      href: "/dashboard/orders",
+      label: "Commandes",
+      icon: <List size={20} />,
+      roles: ["admin", "super_admin"],
+    },
     {
       href: "/dashboard/orders/history",
       label: "Historique",
       icon: <History size={20} />,
+      roles: ["admin", "super_admin"],
     },
     {
       href: "/dashboard/drivers",
       label: "Livreurs",
       icon: <Users size={20} />,
+      roles: ["admin", "super_admin"],
     },
     {
       href: "/dashboard/storelist",
       label: "Partenaires",
       icon: <Home size={20} />,
+      roles: ["admin", "super_admin"],
     },
-  ];
-
-  if (user?.role === "super_admin" || user?.role === "admin") {
-    links.push({
+    {
       href: "/dashboard/offers",
       label: "Offres & Livraisons",
       icon: <Percent size={20} />,
-    });
-  }
+      roles: ["admin", "super_admin"],
+    },
+    {
+      href: "/dashboard/contacts",
+      label: "Service & Clients",
+      icon: <Phone size={20} />,
+      roles: ["super_admin"],
+    },
+    {
+      href: "/dashboard/featured",
+      label: "Sélectionnés (Featured)",
+      icon: <Sparkles size={20} />,
+      roles: ["super_admin"],
+    },
+    {
+      href: "/dashboard/notifications",
+      label: "Notifications",
+      icon: <Bell size={20} />,
+      roles: ["super_admin"],
+    },
+    {
+      href: "/dashboard/admins",
+      label: "Admins",
+      icon: <ShieldCheck size={20} />,
+      roles: ["super_admin"],
+    },
+    {
+      href: "/dashboard/promo",
+      label: "Codes promo",
+      icon: <TicketPercent size={20} />,
+      roles: ["super_admin"],
+    },
+    {
+      href: "/dashboard/tags",
+      label: "Tags",
+      icon: <Tag size={20} />,
+      roles: ["super_admin"],
+    },
+    {
+      href: "/dashboard/courses",
+      label: "Cours",
+      icon: <GraduationCap size={20} />,
+      roles: ["super_admin"],
+    },
+    {
+      href: "/dashboard/grocery-collections",
+      label: "قوائم Grocery",
+      icon: <ShoppingBasket size={20} />,
+      roles: ["super_admin"],
+    },
+     {
+      href: "/dashboard/banners",
+      label: "banners",
+      icon: <ShoppingBasket size={20} />,
+      roles: ["super_admin"],
+    },
+  ];
 
-  if (user?.role === "super_admin") {
-    links.push(
-      {
-        href: "/dashboard/featured",
-        label: "Sélectionnés (Featured)",
-        icon: <Sparkles size={20} />,
-      },
-      {
-        href: "/dashboard/notifications",
-        label: "Notifications",
-        icon: <Bell size={20} />,
-      },
-      {
-        href: "/dashboard/admins",
-        label: "Admins",
-        icon: <ShieldCheck size={20} />,
-      },
-      {
-        href: "/dashboard/contacts",
-        label: "Service & Clients",
-        icon: <Phone size={20} />,
-      },
-      {
-        href: "/dashboard/promo",
-        label: "Codes promo",
-        icon: <TicketPercent size={20} />,
-      },
-    );
-  }
+  const links = ALL_LINKS.filter(
+    (link) => user?.role && link.roles.includes(user.role),
+  );
 
   return (
     <>

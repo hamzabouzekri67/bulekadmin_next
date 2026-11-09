@@ -14,6 +14,8 @@ const COMPELETED_STORE_PROFILE =
 const GET_TAGS = process.env.NEXT_PUBLIC_GET_TAGS;
 
 const SORTY_CATG = process.env.NEXT_PUBLIC_SORTY_CATG;
+const SORT_STORE_PRODUCTS =
+  process.env.NEXT_PUBLIC_SORT_STORE_PRODUCTS || "/dash/sortStoreProducts";
 
 export async function checkStatusStore(id: string | string[]) {
   try {
@@ -231,6 +233,24 @@ export async function getTags() {
   } catch (error) {
     return false;
   }
+}
+
+export async function sortStoreProducts(
+  storeId: string,
+  categoryId: string,
+  ids: string[],
+) {
+  const url = `${API_URL}${SORT_STORE_PRODUCTS}`;
+  const { value: token } = await Preferences.get({ key: "token" });
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ storeId, categoryId, ids }),
+  });
+  return (await response.json()) as { status?: boolean; message?: string };
 }
 
 // مثال داخل ملف GetProducts.ts

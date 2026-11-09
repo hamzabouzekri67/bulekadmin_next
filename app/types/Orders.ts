@@ -183,6 +183,7 @@ export type Product = {
   supplements: Supplement[];
   supIds: string[];
   discount: number;
+  maxCount?: number;
 };
 
 export type Supplement = {

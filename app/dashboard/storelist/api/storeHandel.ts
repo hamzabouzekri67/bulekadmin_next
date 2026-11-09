@@ -8,6 +8,8 @@ const LIST_STORE = process.env.NEXT_PUBLIC_LIST_STORE;
 const UPDATE_STATUS_STORE = process.env.NEXT_PUBLIC_UPDATE_STATUS_STORE;
 const ACCEPTED_STORE_SENT = process.env.NEXT_PUBLIC_ACCEPTED_STORE_SENT;
 const UPDATE_STORE = process.env.NEXT_PUBLIC_UPDATE_STORE;
+const LINK_STORE_CATEGORIES =
+  process.env.NEXT_PUBLIC_LINK_STORE_CATEGORIES || "/dash/linkStoreCategories";
 
 export async function GetStoreList(
   user: User,
@@ -125,6 +127,8 @@ export async function updateStoreDetails(
     timeP: string;
     workdays: Workday[];
     secondaryPhones: string[];
+    tag?: string[];
+    taxPercent?: number | null;
   },
 ) {
   try {
@@ -153,4 +157,23 @@ export async function updateStoreDetails(
     alert("Échec de la mise à jour");
     return null;
   }
+}
+
+export async function linkStoreCategories(storeId: string, catgId: string) {
+  const { value: token } = await Preferences.get({ key: "token" });
+  const res = await fetch(`${API_URL}${LINK_STORE_CATEGORIES}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ storeId, catgId }),
+  });
+  return (await res.json()) as {
+    status?: boolean;
+    message?: string;
+    result?: {
+      category?: StoreData["category"];
+    };
+  };
 }

@@ -18,11 +18,29 @@ import {
   acceptedStoreSent,
   GetStoreList,
   handleOnlineStatus,
+  linkStoreCategories,
   updateStoreDetails,
 } from "./api/storeHandel";
 import { useUser } from "@/app/context/UserContext";
 import { StoreData, Workday } from "@/app/types/store";
+import { listTagCatalog, type StoreTag, type TagCategory } from "../tags/api/tags";
 import { useRouter } from "next/navigation";
+
+type ChosenTag = { id: string; name: string; label: string };
+
+function chosenTags(store: StoreData, catalog: StoreTag[]): ChosenTag[] {
+  return (store.tag || []).flatMap((item) => {
+    if (typeof item === "string") {
+      const found = catalog.find((tag) => tag.name === item);
+      return [{ id: found?.id || "", name: item, label: found?.name_ar || item }];
+    }
+    const found = catalog.find((tag) => tag.id === item.id || tag.name === item.name);
+    const id = item.id || found?.id || "";
+    const name = item.name || found?.name || "";
+    if (!id && !name) return [];
+    return [{ id, name, label: found?.name_ar || name }];
+  });
+}
 
 const tabs = [
   { id: "online", label: "En ligne" },
@@ -45,9 +63,17 @@ const daysMapping = [
 export default function ListStore() {
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState("online");
+  const [categoryTab, setCategoryTab] = useState("");
   const [storeData, setStoreData] = useState<StoreData[]>([]);
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [catalog, setCatalog] = useState<TagCategory[]>([]);
+  const [tagCatalog, setTagCatalog] = useState<StoreTag[]>([]);
+  const [editTags, setEditTags] = useState<ChosenTag[]>([]);
+  const [tagsDirty, setTagsDirty] = useState(false);
+  const [pickerStore, setPickerStore] = useState<StoreData | null>(null);
+  const [pickedCatg, setPickedCatg] = useState("");
+  const [linking, setLinking] = useState(false);
 
   // حالات الـ Dialog والتعديل
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -59,6 +85,7 @@ export default function ListStore() {
   // حالة الأرقام الاحتياطية (secondaryPhones)
   const [editSecondaryPhones, setEditSecondaryPhones] = useState<string[]>([]);
   const [newPhoneInput, setNewPhoneInput] = useState("");
+  const [editTax, setEditTax] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -73,6 +100,100 @@ export default function ListStore() {
       return name.includes(query) || phone.includes(query);
     });
   }, [storeData, searchQuery]);
+
+  const storeGroups = useMemo(() => {
+    const groups = new Map<
+      string,
+      { id: string; label: string; color: string; stores: StoreData[] }
+    >();
+    filteredStores.forEach((store) => {
+      const id = store.category?.id || store.catgId || "none";
+      const fromCatalog = catalog.find((item) => item.id === id);
+      const label =
+        store.category?.name_ar ||
+        store.category?.name ||
+        fromCatalog?.name_ar ||
+        fromCatalog?.name ||
+        "غير مربوط";
+      const color = store.category?.color || fromCatalog?.color || "#94a3b8";
+      const group = groups.get(id) || { id, label, color, stores: [] };
+      group.stores.push(store);
+      groups.set(id, group);
+    });
+    const ordered = catalog
+      .map((item) => groups.get(item.id))
+      .filter((group): group is NonNullable<typeof group> => Boolean(group));
+    const rest = [...groups.values()].filter(
+      (group) => !catalog.some((item) => item.id === group.id),
+    );
+    return [...ordered, ...rest];
+  }, [filteredStores, catalog]);
+
+  useEffect(() => {
+    if (storeGroups.length === 0) return;
+    if (!storeGroups.some((group) => group.id === categoryTab)) {
+      setCategoryTab(storeGroups[0].id);
+    }
+  }, [storeGroups, categoryTab]);
+
+  const visibleStores = useMemo(() => {
+    return storeGroups.find((group) => group.id === categoryTab)?.stores || [];
+  }, [storeGroups, categoryTab]);
+
+  useEffect(() => {
+    if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
+    void listTagCatalog().then((data) => {
+      if (data.status && data.result) {
+        if (Array.isArray(data.result.categories)) setCatalog(data.result.categories);
+        if (Array.isArray(data.result.tags)) setTagCatalog(data.result.tags);
+      }
+    });
+  }, [user]);
+
+  const PROFILE_REQUIRED_MESSAGE =
+    "يجب على الشريك إكمال الـ profile أولاً قبل التمكّن من التصنيف";
+
+  // الشريك (مطعم أو course) بحالة accepted لم يُكمل الـ profile بعد
+  const isProfileIncomplete = (store: StoreData) =>
+    store.status === "accepted";
+
+  const openCategoryPicker = (store: StoreData) => {
+    if (isProfileIncomplete(store)) {
+      alert(PROFILE_REQUIRED_MESSAGE);
+      return;
+    }
+    setPickerStore(store);
+    setPickedCatg(store.category?.id || store.catgId || "");
+  };
+
+  const saveStoreCategory = async () => {
+    if (!pickerStore || !pickedCatg) return;
+    if (isProfileIncomplete(pickerStore)) {
+      alert(PROFILE_REQUIRED_MESSAGE);
+      return;
+    }
+    setLinking(true);
+    try {
+      const data = await linkStoreCategories(pickerStore._id, pickedCatg);
+      const category = data.result?.category;
+      if (data.status && category) {
+        setStoreData((prev) =>
+          prev.map((store) =>
+            store._id === pickerStore._id
+              ? { ...store, catgId: category.id, category }
+              : store,
+          ),
+        );
+        setPickerStore(null);
+      } else {
+        alert(data.message || "تعذر ربط التصنيف");
+      }
+    } catch {
+      alert("تعذر الاتصال بالخادم");
+    } finally {
+      setLinking(false);
+    }
+  };
 
   const handleOpenEditDialog = (store: StoreData) => {
     // التحقق من الصلاحية قبل فتح الـ Dialog
@@ -96,8 +217,11 @@ export default function ListStore() {
           }));
     setEditWorkdays(initialWorkdays);
 
+    setEditTags(chosenTags(store, tagCatalog));
+    setTagsDirty(false);
     const secPhones = store.secondaryPhones;
     setEditSecondaryPhones(secPhones && Array.isArray(secPhones) ? [...secPhones] : []);
+    setEditTax(store.taxPercent == null ? "" : String(store.taxPercent));
     setNewPhoneInput("");
 
     setIsDialogOpen(true);
@@ -154,32 +278,65 @@ export default function ListStore() {
       }
     }
 
-    // 3. إرسال البيانات للـ API
+    if (tagsDirty && editTags.some((item) => !item.id)) {
+      alert("أحد الوسوم غير مربوط. أزله ثم اختره من جديد، أو أزل كل الوسوم.");
+      return;
+    }
+
+    const isSuperAdmin = user?.role === "super_admin";
+    let taxPercent: number | null | undefined;
+    if (isSuperAdmin) {
+      const rawTax = editTax.trim();
+      if (rawTax === "") {
+        taxPercent = null;
+      } else {
+        const value = Number(rawTax);
+        if (!Number.isFinite(value) || value < 0 || value > 100) {
+          alert("نسبة الضريبة يجب أن تكون بين 0 و 100");
+          return;
+        }
+        taxPercent = value;
+      }
+    }
+
     const result = await updateStoreDetails(selectedStore._id, {
       phoneNumber: trimmedPhone,
       timeP: editTimeP,
       workdays: editWorkdays,
       secondaryPhones: editSecondaryPhones,
+      ...(tagsDirty ? { tag: editTags.map((item) => item.id) } : {}),
+      ...(isSuperAdmin ? { taxPercent } : {}),
     });
 
-    if (result !== null) {
-      setStoreData((prev) =>
-        prev.map((s) =>
-          s._id === selectedStore._id
-            ? ({
-                ...s,
-                phoneNumber: trimmedPhone,
-                timeP: editTimeP,
-                workdays: editWorkdays,
-                secondaryPhones: editSecondaryPhones,
-              } as StoreData)
-            : s,
-        ),
-      );
-
-      setIsDialogOpen(false);
-      alert("Modifications enregistrées avec succès !");
+    if (!result || result.status === false) {
+      if (result?.message) alert(result.message);
+      return;
     }
+
+    setStoreData((prev) =>
+      prev.map((s) =>
+        s._id === selectedStore._id
+          ? ({
+              ...s,
+              phoneNumber: trimmedPhone,
+              timeP: editTimeP,
+              workdays: editWorkdays,
+              secondaryPhones: editSecondaryPhones,
+              ...(isSuperAdmin ? { taxPercent: taxPercent ?? null } : {}),
+              ...(tagsDirty
+                ? {
+                    tag: editTags
+                      .filter((item) => item.id && item.name)
+                      .map((item) => ({ id: item.id, name: item.name })),
+                  }
+                : {}),
+            } as StoreData)
+          : s,
+      ),
+    );
+
+    setIsDialogOpen(false);
+    alert("Modifications enregistrées avec succès !");
   };
 
   return (
@@ -244,6 +401,25 @@ export default function ListStore() {
         </div>
       </div>
 
+      {storeGroups.length > 0 && (
+        <div className="flex border-b border-gray-200 mb-6 overflow-x-auto no-scrollbar">
+          {storeGroups.map((group) => (
+            <button
+              key={group.id}
+              type="button"
+              onClick={() => setCategoryTab(group.id)}
+              className={`px-6 py-3 whitespace-nowrap text-xs font-bold uppercase tracking-widest transition-all duration-200 flex items-center gap-2 text-red-600 ${
+                categoryTab === group.id ? "border-b-4 border-red-600" : "hover:bg-red-50"
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-red-600" />
+              {group.label}
+              <span className="text-[10px] font-black opacity-70">{group.stores.length}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Table Container */}
       <div className="bg-white rounded-none shadow-xl border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
@@ -260,8 +436,8 @@ export default function ListStore() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredStores.length > 0 ? (
-                filteredStores.map((v, i) => (
+              {visibleStores.length > 0 ? (
+                visibleStores.map((v, i) => (
                   <tr
                     key={v._id || i}
                     className="hover:bg-gray-50 transition-colors group"
@@ -278,8 +454,37 @@ export default function ListStore() {
                           <div className="font-bold text-base text-black">
                             {v.nameEtabliss}
                           </div>
-                          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">
-                            {typeof  v.createdAt}
+                          <div className="mt-1 flex flex-wrap items-center gap-1">
+                            {user?.role === "admin" || user?.role === "super_admin" ? (
+                              <button
+                                type="button"
+                                onClick={() => openCategoryPicker(v)}
+                                title={
+                                  isProfileIncomplete(v)
+                                    ? PROFILE_REQUIRED_MESSAGE
+                                    : undefined
+                                }
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 ${
+                                  isProfileIncomplete(v)
+                                    ? "opacity-40 cursor-not-allowed"
+                                    : ""
+                                }`}
+                              >
+                                {v.category?.name_ar || v.category?.name || "ربط التصنيف"}
+                              </button>
+                            ) : (
+                              <span className="text-[10px] font-bold text-red-600">
+                                {v.category?.name_ar || v.category?.name || "غير مربوط"}
+                              </span>
+                            )}
+                            {chosenTags(v, tagCatalog).map((item) => (
+                              <span
+                                key={`${v._id}-${item.id || item.name}`}
+                                className="text-[10px] font-bold text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full"
+                              >
+                                {item.label}
+                              </span>
+                            ))}
                           </div>
                         </div>
                       </div>
@@ -332,8 +537,20 @@ export default function ListStore() {
                       </a>
                     </td>
 
-                    <td className="px-6 py-5 text-[11px] font-bold uppercase">
-                      {v.typeEtabliss}
+                    <td className="px-6 py-5">
+                      <div className="text-[11px] font-black uppercase tracking-wide text-red-600">
+                        {v.category?.name_ar || v.category?.name || "غير مربوط"}
+                      </div>
+                      {v.typeEtabliss ? (
+                        <div className="text-[10px] font-bold uppercase text-black mt-1">
+                          {v.typeEtabliss}
+                        </div>
+                      ) : null}
+                      {user?.role === "super_admin" ? (
+                        <div className="text-[10px] font-bold text-black mt-1">
+                          ضريبة {v.taxPercent == null ? "الولاية" : `${v.taxPercent}%`}
+                        </div>
+                      ) : null}
                     </td>
 
                     <td className="px-6 py-5">
@@ -405,10 +622,21 @@ export default function ListStore() {
                           </div>
                         ) : (
                           <Link
-                            href={{
-                              pathname: `/store/details`,
-                              query: { id: v._id, menu: true },
-                            }}
+                            href={
+                              v.course && v.status !== "accepted"
+                                ? {
+                                    pathname: "/dashboard/storelist/add",
+                                    query: {
+                                      id: v._id,
+                                      course: "1",
+                                      name: v.nameEtabliss,
+                                    },
+                                  }
+                                : {
+                                    pathname: "/store/details",
+                                    query: { id: v._id, menu: true },
+                                  }
+                            }
                             className="text-red-600 hover:scale-110 transition-transform cursor-pointer"
                           >
                             <Eye size={20} />
@@ -466,6 +694,111 @@ export default function ListStore() {
                     className="w-full bg-transparent outline-none text-sm font-medium"
                   />
                 </div>
+              </div>
+
+              {user?.role === "super_admin" && (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-700 mb-2">
+                    نسبة الضريبة الخاصة بهذا المحل %
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step="0.1"
+                    value={editTax}
+                    onChange={(e) => setEditTax(e.target.value)}
+                    placeholder="فارغ = نسبة الولاية"
+                    className="w-full border border-gray-300 px-3 py-2 text-sm font-medium outline-none"
+                  />
+                </div>
+              )}
+
+              <div dir="rtl">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <label className="block text-xs font-bold text-gray-700">
+                    وسوم هذا المطعم ({editTags.length} من 3)
+                  </label>
+                  {editTags.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditTags([]);
+                        setTagsDirty(true);
+                      }}
+                      className="text-[11px] font-black text-red-700"
+                    >
+                      إزالة كل الوسوم
+                    </button>
+                  )}
+                </div>
+                {editTags.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {editTags.map((item, index) => (
+                      <button
+                        key={`${item.id || item.name}-${index}`}
+                        type="button"
+                        onClick={() => {
+                          setEditTags((prev) => prev.filter((_, i) => i !== index));
+                          setTagsDirty(true);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold bg-red-600 text-white"
+                      >
+                        {item.label}
+                        <X size={12} />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs font-bold text-gray-400 mb-3">لا توجد وسوم على هذا المطعم.</p>
+                )}
+                {selectedStore.category || selectedStore.catgId ? (
+                  <div className="flex flex-wrap gap-2">
+                    {tagCatalog
+                      .filter(
+                        (item) =>
+                          item.catgId ===
+                          (selectedStore.category?.id || selectedStore.catgId),
+                      )
+                      .map((item) => {
+                        const selected = editTags.some((tag) => tag.id === item.id);
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => {
+                              setTagsDirty(true);
+                              setEditTags((prev) =>
+                                prev.some((tag) => tag.id === item.id)
+                                  ? prev.filter((tag) => tag.id !== item.id)
+                                  : prev.length < 3
+                                    ? [
+                                        ...prev,
+                                        {
+                                          id: item.id,
+                                          name: item.name,
+                                          label: item.name_ar || item.name,
+                                        },
+                                      ]
+                                    : prev,
+                              );
+                            }}
+                            className={`px-3 py-2 text-xs font-bold border ${
+                              selected
+                                ? "bg-red-600 border-red-600 text-white"
+                                : "bg-white border-gray-200 text-gray-700"
+                            }`}
+                          >
+                            {item.name_ar || item.name}
+                          </button>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <p className="text-xs font-bold text-amber-700">
+                    اربط تصنيف المحل قبل اختيار وسوم جديدة. يمكن إزالة الوسوم الحالية.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -585,6 +918,55 @@ export default function ListStore() {
                 className="px-6 py-2 bg-red-600 text-white text-xs font-bold uppercase tracking-widest hover:bg-red-700"
               >
                 Enregistrer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pickerStore && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white w-full max-w-md p-6" dir="rtl">
+            <h3 className="font-black text-lg text-black">
+              تصنيف {pickerStore.nameEtabliss}
+            </h3>
+            <p className="text-xs text-gray-500 mt-1 mb-4">
+              تصنيف واحد فقط، مثل مطعم أو بقالة.
+            </p>
+            <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto">
+              {catalog.map((category) => {
+                const selected = pickedCatg === category.id;
+                return (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => setPickedCatg(category.id)}
+                    className={`px-3 py-2 text-xs font-bold border ${
+                      selected
+                        ? "bg-red-600 border-red-600 text-white"
+                        : "bg-white border-gray-200 text-gray-700"
+                    }`}
+                  >
+                    {category.name_ar || category.name}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setPickerStore(null)}
+                className="px-4 py-2 text-xs font-bold text-gray-600"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                disabled={!pickedCatg || linking}
+                onClick={() => void saveStoreCategory()}
+                className="px-4 py-2 bg-red-600 text-white text-xs font-bold disabled:opacity-40"
+              >
+                {linking ? "..." : "حفظ"}
               </button>
             </div>
           </div>

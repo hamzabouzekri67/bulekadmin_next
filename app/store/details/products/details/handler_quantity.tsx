@@ -218,6 +218,11 @@ export function QuantitySelector({
 
   const handleUpdate = (newQty: number, isdec: boolean) => {
     if (newQty < 0) return;
+    const limit = Number(product.maxCount) || 0;
+    if (!isdec && limit > 0 && newQty > limit) {
+      alert(`الحد الأقصى لهذا المنتج هو ${limit}`);
+      return;
+    }
 
     const hasRequis = product.supplements.some(
       (element) => element.chose === "requis",

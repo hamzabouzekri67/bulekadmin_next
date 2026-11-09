@@ -51,7 +51,8 @@ export default function DashboardLayout({
 
   // States الخاصة بالبيانات
   // 💡 المصفوفة الآن تخزن الـ name الإنجليزي الثابت، وتم حذف state الـ newTag القديمة
-  const [tags, setTags] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [catgId, setCatgId] = useState("");
   const [prepTime, setPrepTime] = useState("");
 
   const [workingHours, setWorkingHours] = useState<WeeklyHours>({
@@ -98,13 +99,11 @@ export default function DashboardLayout({
   }, [id]);
 
   // 💡 دالة الـ Toggle الجديدة: تضيف الاسم إذا لم يكن موجوداً وتحذفه إذا كان موجوداً بحد أقصى 3 تصنيفات
-  const handleTagToggle = (tagName: string) => {
-    if (tags.includes(tagName)) {
-      setTags((prev) => prev.filter((t) => t !== tagName));
-    } else {
-      if (tags.length < 3) {
-        setTags((prev) => [...prev, tagName]);
-      }
+  const handleTagToggle = (tagId: string) => {
+    if (selectedTags.includes(tagId)) {
+      setSelectedTags((prev) => prev.filter((id) => id !== tagId));
+    } else if (selectedTags.length < 3) {
+      setSelectedTags((prev) => [...prev, tagId]);
     }
   };
 
@@ -120,7 +119,7 @@ export default function DashboardLayout({
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
-        return tags.length > 0; // يضمن أن المستخدم اختار تصنيفاً واحداً على الأقل للانتقال
+        return catgId !== "" && selectedTags.length > 0;
       case 2:
         return prepTime.trim() !== "";
       case 3:
@@ -134,7 +133,8 @@ export default function DashboardLayout({
     try {
       setIsSaving(true);
       const dataToSend = new FormData();
-      dataToSend.append("tags", JSON.stringify(tags));
+      dataToSend.append("tag", JSON.stringify(selectedTags));
+      dataToSend.append("catgId", catgId);
       dataToSend.append("prepTime", prepTime);
       dataToSend.append("workingHours", JSON.stringify(workingHours));
       dataToSend.append("location", location);
@@ -202,7 +202,15 @@ export default function DashboardLayout({
           {/* رندرة المكونات */}
           {currentStep === 1 && (
             /* 💡 تم تحديث الـ Props هنا لتمرير المتغيرات والتابع الجديد المتوافق مع الـ Typescript */
-            <StepTags tags={tags} onTagToggle={handleTagToggle} />
+            <StepTags
+              tags={selectedTags}
+              catgId={catgId}
+              onTagToggle={handleTagToggle}
+              onCategoryChange={(nextId) => {
+                setCatgId(nextId);
+                setSelectedTags([]);
+              }}
+            />
           )}
 
           {currentStep === 2 && (

@@ -1,32 +1,87 @@
-// app/dashboard/[id]/components/StepTags.tsx
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Tag, AlertCircle, Check, Loader2 } from "lucide-react";
-import { getTags } from "../api/GetProducts"; // تأكد من صحة مسار ملف الـ API تبعاً لمشروعك
+import { getTags } from "../api/GetProducts";
 
-// 💡 1. تعريف واجهة بيانات التاغ القادم من الـ API
+interface TagCategory {
+  _id?: string;
+  id?: string;
+  name?: string;
+  name_ar?: string;
+  color?: string;
+  icons?: string;
+}
+
 interface TagItem {
   _id: string;
+  id?: string;
   name: string;
   name_ar: string;
-  color: string;
-  icons: string;
+  image?: string;
+  color?: string;
+  icons?: string;
+  catgId?: string | null;
+  category?: TagCategory | null;
 }
 
 // 💡 2. تعريف واجهة الـ Props لربط المكون مع الأب (DashboardLayout)
 interface StepTagsProps {
-  tags: string[]; // مصفوفة التاغات المختارة القادمة من الـ State في الأب
-  onTagToggle: (tagName: string) => void; // دالة التبديل (Toggle) الممررة من الأب
+  tags: string[];
+  catgId: string;
+  onTagToggle: (tagId: string) => void;
+  onCategoryChange: (catgId: string) => void;
 }
 
-export default function StepTags({ tags, onTagToggle }: StepTagsProps) {
+export default function StepTags({
+  tags,
+  catgId,
+  onTagToggle,
+  onCategoryChange,
+}: StepTagsProps) {
   const [availableTags, setAvailableTags] = useState<TagItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [hasError, setHasError] = useState<boolean>(false);
 
   // الاعتماد على طول المصفوفة القادمة من الـ Props
   const isMaxReached = tags.length >= 3;
+
+  const groups = useMemo(() => {
+    const buckets = new Map<
+      string,
+      { id: string; title: string; color: string; icons: string; tags: TagItem[] }
+    >();
+
+    availableTags.forEach((item) => {
+      const category = item.category;
+      const id = category?._id || category?.id || (item.catgId ? "" : "none");
+      const key = id || "none";
+      const current = buckets.get(key) || {
+        id: key,
+        title: category?.name_ar || category?.name || "بدون تصنيف",
+        color: category?.color || item.color || "#9ca3af",
+        icons: category?.icons || "",
+        tags: [],
+      };
+      current.tags.push(item);
+      buckets.set(key, current);
+    });
+
+    return Array.from(buckets.values()).sort((a, b) => {
+      if (a.id === "none") return 1;
+      if (b.id === "none") return -1;
+      return a.title.localeCompare(b.title, "ar");
+    });
+  }, [availableTags]);
+
+  const categories = useMemo(
+    () => groups.filter((group) => group.id !== "none"),
+    [groups],
+  );
+  const visibleGroups = catgId
+    ? groups.filter((group) => group.id === catgId)
+    : [];
 
   useEffect(() => {
     const fetchAllTags = async () => {
@@ -57,7 +112,7 @@ export default function StepTags({ tags, onTagToggle }: StepTagsProps) {
         <div className="flex items-center gap-2 text-red-600 font-bold">
           <Tag size={22} className="shrink-0" />
           <h3 className="text-base sm:text-lg">
-            الخطوة 1: تصنيفات وميزات المحل (Tags)
+            الخطوة 1: تصنيف المحل والوسوم
           </h3>
         </div>
         <span
@@ -70,8 +125,8 @@ export default function StepTags({ tags, onTagToggle }: StepTagsProps) {
       </div>
 
       <p className="text-xs sm:text-sm text-gray-500 mb-5 leading-relaxed">
-        اختر التصنيفات المناسبة لمطبخك أو محلك من الخيارات المتاحة أدناه (يمكنك
-        اختيار حتى 3 تصنيفات).
+        اختر تصنيفاً واحداً للمحل، مثل مطعم أو بقالة. بعدها يمكنك اختيار حتى 3
+        وسوم من هذا التصنيف.
       </p>
 
       {/* حالة التحميل */}
@@ -92,54 +147,109 @@ export default function StepTags({ tags, onTagToggle }: StepTagsProps) {
 
       {/* صندوق عرض التاغات */}
       {!isLoading && !hasError && (
-        <div className="flex flex-wrap gap-2 sm:gap-3 p-3 sm:p-5 border border-gray-100 bg-gray-50/40 rounded-xl sm:rounded-2xl">
+        <div className="mb-4 flex flex-wrap gap-2">
+          {categories.length === 0 ? (
+            <span className="text-xs font-bold text-gray-400">
+              لا توجد تصنيفات بعد.
+            </span>
+          ) : (
+            categories.map((category) => {
+              const selected = catgId === category.id;
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => onCategoryChange(category.id)}
+                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border ${
+                    selected
+                      ? "bg-red-600 border-red-600 text-white"
+                      : "bg-white border-gray-200 text-gray-700"
+                  }`}
+                >
+                  <span
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ backgroundColor: selected ? "#fff" : category.color }}
+                  />
+                  {category.title}
+                </button>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {!isLoading && !hasError && catgId && (
+        <div className="space-y-4 p-3 sm:p-5 border border-gray-100 bg-gray-50/40 rounded-xl sm:rounded-2xl">
           {availableTags.length === 0 ? (
             <span className="text-xs sm:text-sm text-gray-400 w-full text-center py-4">
               لا توجد تصنيفات متاحة حالياً.
             </span>
           ) : (
-            availableTags.map((option) => {
-              // التحقق من التحديد بناءً على المصفوفة القادمة من البروبس
-              const isSelected = tags.includes(option.name);
-
-              return (
-                <button
-                  key={option._id}
-                  type="button"
-                  onClick={() => onTagToggle(option.name)} // استدعاء الدالة الممررة من الأب مباشرة
-                  disabled={isMaxReached && !isSelected}
-                  className={`
-                    flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl text-xs font-bold transition-all border select-none
-                    ${
-                      isSelected
-                        ? "bg-red-600 border-red-600 text-white shadow-md shadow-red-100 scale-95"
-                        : "bg-white border-gray-200 text-gray-700 hover:border-red-300 hover:bg-red-50/30"
-                    }
-                    disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-200
-                  `}
-                >
-                  {option.icons && (
+            visibleGroups.map((group) => (
+              <div key={group.id}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: group.color }}
+                  />
+                  {group.icons ? (
                     <img
-                      src={option.icons}
-                      alt={option.name}
-                      className={`w-4 h-4 sm:w-5 sm:h-5 object-contain rounded-md transition-all shrink-0 ${
-                        isSelected ? "brightness-0 invert" : ""
-                      }`}
+                      src={group.icons}
+                      alt={group.title}
+                      className="w-4 h-4 object-contain rounded"
                     />
-                  )}
+                  ) : null}
+                  <p className="text-xs font-black text-gray-500">{group.title}</p>
+                </div>
+                <div className="flex flex-wrap gap-2 sm:gap-3">
+                  {group.tags.map((option) => {
+                    const tagId = option.id || option._id;
+                    const isSelected = tags.includes(tagId);
+                    const hasCategory = Boolean(option.catgId && option.category);
+                    const icon = option.icons || option.category?.icons || option.image;
 
-                  <span className="truncate max-w-[120px] sm:max-w-none">
-                    {option.name_ar}
-                  </span>
+                    return (
+                      <button
+                        key={option._id}
+                        type="button"
+                        onClick={() => hasCategory && onTagToggle(tagId)}
+                        disabled={!hasCategory || (isMaxReached && !isSelected)}
+                        className={`
+                          flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg sm:rounded-xl text-xs font-bold transition-all border select-none
+                          ${
+                            isSelected
+                              ? "bg-red-600 border-red-600 text-white shadow-md shadow-red-100 scale-95"
+                              : "bg-white border-gray-200 text-gray-700 hover:border-red-300 hover:bg-red-50/30"
+                          }
+                          disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-200
+                        `}
+                      >
+                        {icon ? (
+                          <img
+                            src={icon}
+                            alt={option.name}
+                            className={`w-4 h-4 sm:w-5 sm:h-5 object-contain rounded-md transition-all shrink-0 ${
+                              isSelected ? "brightness-0 invert" : ""
+                            }`}
+                          />
+                        ) : null}
 
-                  {isSelected && (
-                    <span className="bg-white text-red-600 p-0.5 rounded-full animate-in zoom-in duration-150 shrink-0">
-                      <Check size={9} strokeWidth={4} />
-                    </span>
-                  )}
-                </button>
-              );
-            })
+                        <span className="truncate max-w-[120px] sm:max-w-none">
+                          {option.name_ar}
+                          {!hasCategory ? " · بلا تصنيف" : ""}
+                        </span>
+
+                        {isSelected && (
+                          <span className="bg-white text-red-600 p-0.5 rounded-full animate-in zoom-in duration-150 shrink-0">
+                            <Check size={9} strokeWidth={4} />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
           )}
         </div>
       )}

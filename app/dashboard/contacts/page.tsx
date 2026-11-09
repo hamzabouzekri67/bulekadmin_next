@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { User, useUser } from "@/app/context/UserContext";
 import { addApiContacts, fetchApiContacts } from "./api/handel_contact";
+import RoleGuard from "@/app/dashboard/components/RoleGuard";
 
 interface Region {
   ville: string;
@@ -35,7 +36,7 @@ interface Contact {
   category: "standard" | "branch";
 }
 
-export default function ServicePhonePage() {
+function ServicePhoneContent() {
   const [loading, setLoading] = useState<boolean>(true);
   const [countryData, setCountryData] = useState<CountryDetail | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -423,5 +424,13 @@ export default function ServicePhonePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ServicePhonePage() {
+  return (
+    <RoleGuard allowedRoles={["super_admin"]}>
+      <ServicePhoneContent />
+    </RoleGuard>
   );
 }

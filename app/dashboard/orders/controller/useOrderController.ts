@@ -188,9 +188,9 @@ const fetchOrders = async (
     usersCount: orders.result.stats.usersCount || 0,
     driversCount: orders.result.stats.driversCount || 0,
     restaurantsCount: orders.result.stats.restaurantsCount || 0,
-    totalProductsPending: orders.result.stats.totalProductsPending || 0,
+    totalProductsPending: orders.result.stats.totalProductsPending || 0, 
   });
-};
+}; 
 
 export async function GET(url: string, user: User) {
   try {

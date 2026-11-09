@@ -20,8 +20,9 @@ import {
 import { StoreData } from "@/app/types/store";
 import { Product } from "@/app/types/Orders";
 import { useRouter } from "next/navigation";
+import RoleGuard from "@/app/dashboard/components/RoleGuard";
 
-export default function FeaturedPage() {
+function FeaturedContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [stores, setStores] = useState<StoreData[]>([]);
   const [items, setItems] = useState<Product[]>([]);
@@ -526,5 +527,13 @@ export default function FeaturedPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function FeaturedPage() {
+  return (
+    <RoleGuard allowedRoles={["super_admin"]}>
+      <FeaturedContent />
+    </RoleGuard>
   );
 }

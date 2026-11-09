@@ -11,16 +11,40 @@ const ACCEPTED_ORDER_PATH = process.env.NEXT_PUBLIC_ACCEPTED_BACKEND;
 const REJECT_ORDER_PATH = process.env.NEXT_PUBLIC_REJECT_ORDER;
 const PROCESS_ORDERS = process.env.NEXT_PUBLIC_PROCESS_ORDERS;
 
+/**
+ * مسح tmpToken من order معين داخل الـ state فوراً بعد الاستخدام
+ * لمنع إعادة الاستخدام أو القراءة من DevTools
+ */
+function clearTmpToken(
+  orderId: string,
+  setState: Dispatch<SetStateAction<Order[]>>,
+) {
+  setState((prev) =>
+    prev.map((o) =>
+      String(o._id) === String(orderId) ? { ...o, tmpToken: undefined } : o,
+    ),
+  );
+}
+
 export async function AcceptedOrders(
   orders: Order,
   minutes: number,
   user: User,
   myOrders: Order[],
-  setmyOrders: (val: Order[]) => void,
+  setmyOrders: Dispatch<SetStateAction<Order[]>>,
   secondTime: number,
 ) {
+  // ── guard: لا نرسل بدون tmpToken ────────────────────────────────────
+  if (!orders.tmpToken) {
+    console.error("[AcceptedOrders] tmpToken مفقود — تم إلغاء العملية");
+    return null;
+  }
+
+  // ── نسخ الـ token ثم مسحه من الـ state فوراً قبل أي await ────────────
+  const tokenSnapshot = orders.tmpToken;
+  clearTmpToken(orders._id, setmyOrders);
+
   try {
-    //  console.log("newOrders",newOrders);
     const url = `${API_URL}${ACCEPTED_ORDER_PATH}`;
     const detailesOrder = {
       timePrepare: minutes,
@@ -35,42 +59,38 @@ export async function AcceptedOrders(
       clientId: orders.send.id,
     };
 
-    //console.log(url);
-
     const res = await fetch(url, {
       method: "POST",
       referrerPolicy: "no-referrer",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${orders.tmpToken || ""}`,
+        Authorization: `Bearer ${tokenSnapshot}`,
       },
-      //credentials: "include",
       body: JSON.stringify(detailesOrder),
     });
 
-   
-
     if (res.ok) {
       const data = await res.json();
-
-
       const targetId = data.result?.result?.orderId;
 
-      if (targetId) {
-        // console.log("الـ ID المستهدف للحذف:", targetId);
+      // ── تحقق: orderId في الـ response يجب أن يطابق ما أرسلناه ─────────
+      if (targetId && String(targetId) !== String(orders._id)) {
+        console.error(
+          "[AcceptedOrders] orderId في الـ response لا يطابق الطلب — رُفضت النتيجة",
+        );
+        return null;
+      }
 
+      if (targetId) {
         const updated = myOrders.filter(
           (o) => String(o._id) !== String(targetId),
         );
-
         setmyOrders(updated);
-
         return;
       } else {
-        console.log("لم يتم العثور على orderId في المسار data.result.result");
+        console.log("لم يتم العثور على orderId في data.result.result");
       }
     }
-    //     return null
   } catch (error) {
     console.log(error);
     return null;
@@ -92,21 +112,34 @@ export async function RejectedOrders({
   indexMessage,
   setmyOrders,
 }: RejetecOrder) {
+  // ── guard: لا نرسل بدون order أو tmpToken ────────────────────────────
+  if (!order) {
+    console.error("[RejectedOrders] order مفقود — تم إلغاء العملية");
+    return null;
+  }
+
+  if (!order.tmpToken) {
+    console.error("[RejectedOrders] tmpToken مفقود — تم إلغاء العملية");
+    return null;
+  }
+
+  // ── نسخ الـ token ثم مسحه من الـ state فوراً قبل أي await ────────────
+  const tokenSnapshot = order.tmpToken;
+  clearTmpToken(order._id, setmyOrders);
+
   try {
     const url = `${API_URL}${REJECT_ORDER_PATH}`;
-
-    //console.log(url);
 
     const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${order?.tmpToken || ""}`,
+        Authorization: `Bearer ${tokenSnapshot}`,
       },
       body: JSON.stringify({
-        orderId: order?._id,
-        notificationsToken: order?.send.notificationsToken,
-        message: order?.message,
+        orderId: order._id,
+        notificationsToken: order.send.notificationsToken,
+        message: order.message,
         itemRejected: unavailableProducts,
         assistedBy: user?.id,
         indexMessage: indexMessage,
@@ -115,19 +148,16 @@ export async function RejectedOrders({
 
     if (res.ok) {
       const data = await res.json();
-      //  console.log(data);
 
       if (data && data.result) {
         if (!data.result.status) return;
-
-        setmyOrders((prev) => prev.filter((e) => e._id !== order?._id));
+        setmyOrders((prev) => prev.filter((e) => e._id !== order._id));
       }
 
       return;
     }
-    //     return null
   } catch (error) {
-    //console.log(error);
+    console.log(error);
     return null;
   }
 }
@@ -154,22 +184,17 @@ export async function processOrder({
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      //  credentials: "include",
       body: JSON.stringify({
         orderId: order?._id,
         claimId: user?.id,
       }),
     });
 
-    console.log(res);
-
     if (res.ok) {
       const data = await res.json();
 
       if (data && data.result) {
-        // الحالة الأولى: نجاح العملية (أنت من حجزت الطلب)
         if (data.result.status) {
-          // حذف الطلب من القائمة لأنه انتقل لـ "طلباتي"
           setNewOrders((prev) => prev.filter((e) => e._id !== order?._id));
 
           const goToDetails = window.confirm(
@@ -181,28 +206,18 @@ export async function processOrder({
 
           if (goToDetails) {
             router.push(`/dashboard/orders/handlerOrders`);
-            console.log("التوجه إلى تفاصيل الطلب...");
-          } else {
-            console.log("البقاء لاستلام مزيد من الطلبات");
           }
-
-          // هنا يمكنك توجيه المستخدم إذا أردت كما ناقشنا سابقاً
-        }
-        // الحالة الثانية: فشل العملية (الطلب طار!)
-        else {
-          // إظهار رسالة تنبيه للمسير
+        } else {
           alert(
             data.result.message ||
               "Désolé, ce commande est déjà prise par un autre agent.",
           );
-
-          // حذف الطلب من القائمة فوراً لكي لا يحاول الضغط عليه مرة أخرى
           setNewOrders((prev) => prev.filter((e) => e._id !== order?._id));
         }
       }
     }
   } catch (error) {
-    console.log("error");
+    console.log("error", error);
     return null;
   }
 }

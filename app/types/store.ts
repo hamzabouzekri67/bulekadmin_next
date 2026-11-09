@@ -42,7 +42,15 @@ export interface StoreData {
   numRatings?: number;
   compeletedOrderCount?: number;
   document?: DocumentItem[];
-  tag?: string[];
+  tag?: Array<string | { id: string; name: string }>;
+  catgId?: string | null;
+  category?: {
+    id: string;
+    name: string;
+    name_ar: string;
+    color: string;
+    icons: string;
+  } | null;
   event?: boolean;
   course?: boolean;
   isMonthly?: boolean;
@@ -60,5 +68,6 @@ export interface StoreData {
   campaignStart?: string;
   campaignEnd?: string;
   secondaryPhones:string[]
+  taxPercent?: number | null;
   __v?: number;
 }
