@@ -8,12 +8,13 @@ importScripts(
 );
 
 firebase.initializeApp({
-  apiKey: "AIzaSyDhQzleEYaDfmFqgmNvGyjOAkB_knLx0QY",
-  authDomain: "veni-eats.firebaseapp.com",
-  projectId: "veni-eats",
-  storageBucket: "veni-eats.appspot.com",
-  messagingSenderId: "760966248764",
-  appId: "1:760966248764:web:7382d50ee2a4764f9b4639",
+  apiKey: "AIzaSyAkZRkOLzG1VPD4vyfhtJeJb48y4XKmbaU",
+  authDomain: "bulekprojects.firebaseapp.com",
+  projectId: "bulekprojects",
+  storageBucket: "bulekprojects.firebasestorage.app",
+  messagingSenderId: "430277466208",
+  appId: "1:430277466208:web:6f603fa73ef24c0bff8b05",
+  measurementId: "G-5H8QKN0V6Y"
 });
 
 const messaging = firebase.messaging();
