@@ -5,9 +5,10 @@ import { useCategories } from "@/app/context/CategoryContext";
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useMemo, Suspense } from "react";
 import { updateProducts, updateStatusProducts } from "./api/UpdateOrder";
-import { sortStoreProducts } from "@/app/store/api/GetProducts";
+import { moveProductToCategory, sortStoreProducts } from "@/app/store/api/GetProducts";
 import {
   ArrowDown,
+  ArrowRightLeft,
   ArrowUp,
   Edit2,
   Edit3,
@@ -82,12 +83,15 @@ export function ProductsStore() {
     null,
   );
 
+  const [moveTargetProduct, setMoveTargetProduct] = useState<Product | null>(
+    null,
+  );
+  const [targetCategoryId, setTargetCategoryId] = useState("");
+  const [movingToCategory, setMovingToCategory] = useState(false);
+
   // const SearchParams = useSearchParams();
 
   const storeId = id as string;
-
-  
-  
 
   useEffect(() => {
     //console.log(storeId);
@@ -181,13 +185,22 @@ export function ProductsStore() {
       image: product.image || "",
       description: product.desc || "",
       comparePrice: product.discount || 0,
-      maxCount: product.maxCount && product.maxCount > 0 ? String(product.maxCount) : "",
+      maxCount:
+        product.maxCount && product.maxCount > 0
+          ? String(product.maxCount)
+          : "",
       supplements: (product.supplements as NewSupplementType[]) || [],
     });
     setImagePreview(product.image || "");
     setSelectedFile(null);
     setOpenMenuId(null);
     setShowProductModal(true);
+  };
+
+  const handleOpenMoveModal = (product: Product) => {
+    setMoveTargetProduct(product);
+    setTargetCategoryId("");
+    setOpenMenuId(null);
   };
 
   const handleToggleProductStatus = async (product: Product) => {
@@ -364,7 +377,10 @@ export function ProductsStore() {
       formData.append("description", newProduct.description ?? "");
       formData.append("price", newProduct.price);
       formData.append("discount", newProduct.comparePrice.toString());
-      formData.append("maxCount", String(Math.max(0, Math.floor(Number(newProduct.maxCount) || 0))));
+      formData.append(
+        "maxCount",
+        String(Math.max(0, Math.floor(Number(newProduct.maxCount) || 0))),
+      );
       formData.append("supplements", JSON.stringify(newProduct.supplements));
 
       const response = await updateProducts(formData);
@@ -461,6 +477,37 @@ export function ProductsStore() {
       </span>
     );
   };
+
+  const handleConfirmMoveProduct = async () => {
+    if (!moveTargetProduct || !targetCategoryId || !categoryId || !storeId)
+      return;
+    setMovingToCategory(true);
+    try {
+      const data = await moveProductToCategory(
+        storeId,
+        moveTargetProduct._id,
+        categoryId,
+        targetCategoryId,
+      );
+
+      if (data?.status) {
+        // إزالة المنتج من القائمة الحالية فوراً
+        setLocalProducts((prev) =>
+          prev.filter((p) => p._id !== moveTargetProduct._id),
+        );
+        setMoveTargetProduct(null);
+        if (typeof fetchCategories === "function") {
+          fetchCategories(storeId, orderId);
+        }
+      } else {
+        alert(data?.message || "تعذر نقل المنتج");
+      }
+    } catch {
+      alert("تعذر الاتصال بالخادم");
+    } finally {
+      setMovingToCategory(false);
+    }
+  };
   return (
     <div className="max-w-4xl mx-auto p-3 md:p-4 pb-32" dir="rtl">
       {/* زر إضافة منتج */}
@@ -491,7 +538,9 @@ export function ProductsStore() {
               <div className="flex items-center gap-3 md:gap-4 min-w-0 flex-1">
                 {!orderId && (
                   <div className="flex flex-col items-center shrink-0">
-                    <span className="text-[11px] font-black text-red-600">{index + 1}</span>
+                    <span className="text-[11px] font-black text-red-600">
+                      {index + 1}
+                    </span>
                     <button
                       type="button"
                       disabled={sortingProducts || index === 0}
@@ -502,7 +551,9 @@ export function ProductsStore() {
                     </button>
                     <button
                       type="button"
-                      disabled={sortingProducts || index === localProducts.length - 1}
+                      disabled={
+                        sortingProducts || index === localProducts.length - 1
+                      }
                       onClick={() => void moveProduct(index, 1)}
                       className="text-red-600 disabled:text-gray-200"
                     >
@@ -549,7 +600,9 @@ export function ProductsStore() {
                   <p className="text-orange-600 font-black text-base sm:text-lg md:text-xl flex items-center gap-0.5">
                     <span>{e.price}</span>
                     {e.maxCount && e.maxCount > 0 ? (
-                      <span className="text-[10px] font-bold text-red-600 mr-2">الحد {e.maxCount}</span>
+                      <span className="text-[10px] font-bold text-red-600 mr-2">
+                        الحد {e.maxCount}
+                      </span>
                     ) : null}
                     <span className="text-[10px] sm:text-xs font-bold text-gray-500 mr-0.5">
                       {e.currency || user?.currency}
@@ -570,8 +623,10 @@ export function ProductsStore() {
 
               {/* التحكم */}
               {!!orderId ? (
-                
-                <div key={e._id} className="flex justify-center items-center shrink-0">
+                <div
+                  key={e._id}
+                  className="flex justify-center items-center shrink-0"
+                >
                   <QuantitySelector
                     order={order}
                     product={e}
@@ -606,6 +661,17 @@ export function ProductsStore() {
                           <span>تعديل المنتج</span>
                         </button>
 
+                        <button
+                          onClick={() => handleOpenMoveModal(e)}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 text-right font-medium"
+                        >
+                          <ArrowRightLeft
+                            size={15}
+                            className="text-purple-500"
+                          />
+                          <span>نقل إلى فئة أخرى</span>
+                        </button>
+
                         <hr className="border-gray-100 my-1" />
 
                         {e.status === "public" ? (
@@ -638,6 +704,61 @@ export function ProductsStore() {
       <div className={openedProductId ? "hidden" : ""}>
         <FloatingCart cartItems={cartItems || []} order={order || null} />
       </div>
+
+      {moveTargetProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-[95%] sm:max-w-sm flex flex-col overflow-hidden shadow-2xl">
+            <div className="flex justify-between items-center px-5 py-4 border-b">
+              <h3 className="font-black text-base text-gray-800">نقل المنتج</h3>
+              <button
+                onClick={() => setMoveTargetProduct(null)}
+                className="text-gray-400 hover:text-gray-700 p-1 hover:bg-gray-100 rounded-full"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-3 bg-gray-50/50">
+              <p className="text-sm text-gray-600">
+                اختر الفئة التي تريد نقل{" "}
+                <span className="font-black text-gray-800">
+                  {moveTargetProduct.title}
+                </span>{" "}
+                إليها:
+              </p>
+
+              <select
+                value={targetCategoryId}
+                onChange={(ev) => setTargetCategoryId(ev.target.value)}
+                className="w-full border p-2.5 rounded-xl text-sm bg-white text-black focus:ring-2 focus:ring-orange-500 outline-none"
+              >
+                <option value="">-- اختر الفئة --</option>
+                {categories
+                  .filter((c) => c._id !== categoryId)
+                  .map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.category}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div className="p-3 border-t bg-white">
+              <button
+                onClick={handleConfirmMoveProduct}
+                disabled={!targetCategoryId || movingToCategory}
+                className={`w-full py-2.5 rounded-xl font-bold text-white text-sm transition ${
+                  targetCategoryId && !movingToCategory
+                    ? "bg-orange-500 hover:bg-orange-600 active:scale-[0.99]"
+                    : "bg-gray-300 cursor-not-allowed"
+                }`}
+              >
+                {movingToCategory ? "جارٍ النقل..." : "تأكيد النقل"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ==================== نافذة إضافة/تعديل المنتج الرئيسي (تم تحديث التمرير هنا) ==================== */}
       {showProductModal && (

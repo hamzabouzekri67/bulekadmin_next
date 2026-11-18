@@ -17,6 +17,9 @@ const SORTY_CATG = process.env.NEXT_PUBLIC_SORTY_CATG;
 const SORT_STORE_PRODUCTS =
   process.env.NEXT_PUBLIC_SORT_STORE_PRODUCTS || "/dash/sortStoreProducts";
 
+const MOVE_PRODUCT_CATG =
+  process.env.NEXT_PUBLIC_MOVE_PRODUCT_CATG;
+
 export async function checkStatusStore(id: string | string[]) {
   try {
     const url = `${API_URL}${CHECK_STATUS_STORE}`;
@@ -253,6 +256,37 @@ export async function sortStoreProducts(
   return (await response.json()) as { status?: boolean; message?: string };
 }
 
+export async function moveProductToCategory(
+  storeId: string,
+  productId: string,
+  fromCategoryId: string,
+  toCategoryId: string,
+) {
+  try {
+    const url = `${API_URL}${MOVE_PRODUCT_CATG}`;
+    const { value: token } = await Preferences.get({ key: "token" });
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        storeId,
+        productId,
+        fromCategoryId,
+        toCategoryId,
+      }),
+    });
+
+    return (await res.json()) as { status?: boolean; message?: string };
+  } catch (error) {
+    console.error("Error moving product:", error);
+    return { status: false, message: "تعذر الاتصال بالخادم" };
+  }
+}
+
 // مثال داخل ملف GetProducts.ts
 export async function updateCategoriesOrder(
   storeId: string,
@@ -261,14 +295,14 @@ export async function updateCategoriesOrder(
   try {
     const url = `${API_URL}${SORTY_CATG}`;
     const { value: token } = await Preferences.get({ key: "token" });
-    
+
     const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ categoryIds , storeId  }),
+      body: JSON.stringify({ categoryIds, storeId }),
     });
 
     if (!response.ok) throw new Error("فشل تحديث الترتيب");
