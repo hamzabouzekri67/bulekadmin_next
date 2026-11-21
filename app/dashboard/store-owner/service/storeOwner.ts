@@ -88,7 +88,8 @@ export type HistoryPeriod = "today" | "7d" | "30d" | "all";
 
 export type HistoryItem = {
   id: string;
-  driverName: string;
+  kind: "recharge" | "topup"; // recharge: شحن سائق، topup: السوبر أدمن شحن رصيدك
+  driverName?: string;
   driverPhone?: string;
   amount: number;
   createdAt: string;
@@ -99,7 +100,8 @@ export type HistoryResponse = {
   page: number;
   totalPages: number;
   total: number;
-  totalAmount: number;
+  totalRecharged: number;
+  totalCredited: number;
 };
 
 export async function GetStoreOwnerHistory(

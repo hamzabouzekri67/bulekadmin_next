@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, RefreshCw, Wallet } from "lucide-react";
+import {
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+  Wallet,
+} from "lucide-react";
 import {
   GetStoreOwnerHistory,
   type HistoryPeriod,
@@ -63,7 +69,7 @@ export default function HistoryPage() {
           Mon historique
         </h2>
         <p className="text-sm text-gray-500 mt-1">
-          Les recharges que vous avez effectuées pour les livreurs.
+          Vos recharges de livreurs et les crédits de votre solde.
         </p>
       </div>
 
@@ -85,11 +91,17 @@ export default function HistoryPage() {
       </div>
 
       {/* الملخص */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4">
-          <p className="text-[11px] text-gray-500">Total rechargé</p>
+          <p className="text-[11px] text-gray-500">Rechargé aux livreurs</p>
           <p className="text-lg md:text-xl font-black text-gray-800">
-            {Number(data?.totalAmount ?? 0).toLocaleString("fr-FR")} DZD
+            {Number(data?.totalRecharged ?? 0).toLocaleString("fr-FR")} DZD
+          </p>
+        </div>
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4">
+          <p className="text-[11px] text-gray-500">Solde crédité</p>
+          <p className="text-lg md:text-xl font-black text-green-700">
+            {Number(data?.totalCredited ?? 0).toLocaleString("fr-FR")} DZD
           </p>
         </div>
         <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4">
@@ -124,30 +136,44 @@ export default function HistoryPage() {
               loading ? "opacity-50" : ""
             }`}
           >
-            {items.map((it) => (
-              <li
-                key={it.id}
-                className="flex items-center justify-between gap-3 px-3 py-3"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-xl bg-[#e91818]/10 text-[#e91818] flex items-center justify-center shrink-0">
-                    <Wallet size={18} />
+            {items.map((it) => {
+              const topup = it.kind === "topup";
+              return (
+                <li
+                  key={it.id}
+                  className="flex items-center justify-between gap-3 px-3 py-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                        topup
+                          ? "bg-green-50 text-green-700"
+                          : "bg-[#e91818]/10 text-[#e91818]"
+                      }`}
+                    >
+                      {topup ? <Wallet size={18} /> : <ArrowUpRight size={18} />}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-gray-800 truncate">
+                        {topup ? "Crédit de solde" : it.driverName}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {formatDate(it.createdAt)}
+                        {!topup && it.driverPhone ? ` · ${it.driverPhone}` : ""}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-gray-800 truncate">
-                      {it.driverName}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {formatDate(it.createdAt)}
-                      {it.driverPhone ? ` · ${it.driverPhone}` : ""}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-sm font-black text-green-700 shrink-0">
-                  +{Number(it.amount).toLocaleString("fr-FR")} DZD
-                </p>
-              </li>
-            ))}
+                  <p
+                    className={`text-sm font-black shrink-0 ${
+                      topup ? "text-green-700" : "text-gray-800"
+                    }`}
+                  >
+                    {topup ? "+" : "−"}
+                    {Number(it.amount).toLocaleString("fr-FR")} DZD
+                  </p>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
