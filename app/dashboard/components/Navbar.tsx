@@ -23,6 +23,7 @@ import {
   Tag,
   GraduationCap,
   ShoppingBasket,
+  Wallet,
 } from "lucide-react";
 
 export default function AppBar() {
@@ -167,12 +168,32 @@ export default function AppBar() {
       icon: <ShoppingBasket size={20} />,
       roles: ["super_admin"],
     },
-     {
+    {
       href: "/dashboard/banners",
       label: "banners",
       icon: <ShoppingBasket size={20} />,
       roles: ["super_admin"],
     },
+
+    // ===== صاحب المتجر (store_owner) =====
+    {
+      href: "/dashboard/store-owner/recharge",
+      label: "Recharger livreurs",
+      icon: <Wallet size={20} />,
+      roles: ["store_owner"],
+    },
+    {
+      href: "/dashboard/store-owner/history",
+      label: "Mon historique",
+      icon: <History size={20} />,
+      roles: ["store_owner"],
+    },
+    // {
+    //   href: "/dashboard/store-owner/offers",
+    //   label: "Mes offres",
+    //   icon: <Percent size={20} />,
+    //   roles: ["store_owner"],
+    // },
   ];
 
   const links = ALL_LINKS.filter(
@@ -245,7 +266,9 @@ export default function AppBar() {
             </div>
 
             {/* Solde Card */}
-            {(user?.role === "admin" || user?.role === "super_admin") && (
+            {(user?.role === "admin" ||
+              user?.role === "super_admin" ||
+              user?.role === "store_owner") && (
               <div className="bg-black/10 rounded-xl p-3 flex items-center justify-between border border-white/5">
                 <div className="flex items-center gap-2">
                   <CreditCard size={14} className="text-red-200" />
