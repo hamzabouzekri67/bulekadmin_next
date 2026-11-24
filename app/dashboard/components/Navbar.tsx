@@ -24,6 +24,7 @@ import {
   GraduationCap,
   ShoppingBasket,
   Wallet,
+  Megaphone,
 } from "lucide-react";
 
 export default function AppBar() {
@@ -172,6 +173,12 @@ export default function AppBar() {
       href: "/dashboard/banners",
       label: "banners",
       icon: <ShoppingBasket size={20} />,
+      roles: ["super_admin"],
+    },
+    {
+      href: "/dashboard/home-ads",
+      label: "إعلانات الرئيسية",
+      icon: <Megaphone size={20} />,
       roles: ["super_admin"],
     },
 

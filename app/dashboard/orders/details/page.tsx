@@ -440,6 +440,9 @@ const OrderDetails = () => {
                     </p>
                   </div>
 
+                  {/* تخفيض إعلانات الرئيسية (Home-ads) */}
+                  <CampaignDiscountBox order={detailesOrders} />
+
                   {/* 2. Frais de livraison Base */}
                   <div className="flex justify-between py-0.5 text-sm">
                     <p className="text-gray-500">Frais livraison de base</p>
@@ -704,6 +707,9 @@ const OrderDetails = () => {
                       {detailesOrders?.currency}
                     </p>
                   </div>
+
+                  {/* تسوية السائق: ما يحصّله وما يدفعه وما يبقى له */}
+                  <DriverSettlementBox order={detailesOrders} />
 
                   <div className="flex justify-between border-t border-gray-300 mt-2 pt-2 text-md font-bold">
                     <p className="text-gray-900">Prix final (Net Global)</p>
@@ -1063,6 +1069,142 @@ export function DriverDialog({
             حسناً
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* تخفيض إعلانات الرئيسية + تسوية السائق                                */
+/* ------------------------------------------------------------------ */
+
+const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : Number(v) || 0);
+
+function MoneyRow({
+  label,
+  value,
+  currency,
+  tone = "text-gray-700",
+  bold = false,
+  sign = "",
+}: {
+  label: string;
+  value: number;
+  currency?: string;
+  tone?: string;
+  bold?: boolean;
+  sign?: string;
+}) {
+  return (
+    <div className={`flex justify-between text-xs ${bold ? "font-bold" : ""}`}>
+      <span className="text-gray-600">{label}</span>
+      <span className={tone}>
+        {sign}
+        {Math.round(value)} {currency}
+      </span>
+    </div>
+  );
+}
+
+/** تخفيض حملات إعلانات الرئيسية: السعر قبل/بعد، المنتجات المخفّضة، ومن يتحمل */
+function CampaignDiscountBox({ order }: { order: Order | null | undefined }) {
+  if (!order) return null;
+  const discount = num(order.campaignDiscount);
+  if (discount <= 0) return null;
+  const cur = order.currency;
+  const storeShare = num(order.campaignStoreShare);
+  const appShare = num(order.campaignPlatformShare);
+  const original = num(order.originalFoodTotal) || num(order.totalOrderPrice) + discount;
+  const lines = (order.listOrder ?? []).filter((l) => num(l.campaignUnitDiscount) > 0);
+
+  return (
+    <div className="bg-purple-50 border border-purple-200 rounded p-2 my-2 space-y-1">
+      <p className="font-semibold text-purple-800 text-xs uppercase tracking-wider">
+        📣 Remise publicité (Home-ads)
+      </p>
+      <MoneyRow label="Prix articles avant remise" value={original} currency={cur} tone="text-gray-500 line-through" />
+      <MoneyRow label="Remise publicité" value={discount} currency={cur} tone="text-red-600" sign="-" />
+      <MoneyRow label="Prix articles après remise" value={num(order.totalOrderPrice)} currency={cur} bold />
+
+      {lines.length > 0 && (
+        <div className="bg-white rounded border border-purple-100 p-1.5 space-y-0.5">
+          {lines.map((l, i) => (
+            <div key={i} className="flex justify-between text-[11px] text-gray-600">
+              <span className="truncate pr-2">
+                {l.title} × {l.qentity} ({num(l.campaignRestaurantShare)}% resto)
+              </span>
+              <span className="text-red-500 whitespace-nowrap">
+                -{Math.round(num(l.campaignUnitDiscount) * num(l.qentity))} {cur}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="pt-1 border-t border-purple-200 space-y-0.5">
+        <MoneyRow label="À la charge du restaurant" value={storeShare} currency={cur} tone="text-red-500" sign="-" />
+        <MoneyRow label="À la charge de l'application" value={appShare} currency={cur} tone="text-blue-600" />
+      </div>
+      <p className="text-[11px] text-purple-700 italic">
+        * Commission calculée après la remise. La part de l&apos;application ({Math.round(appShare)} {cur}) est
+        payée au restaurant par le chauffeur, puis déduite de la dette du chauffeur.
+      </p>
+    </div>
+  );
+}
+
+/** نفس حساب الخادم (completedOrder) وتطبيق السائق */
+function DriverSettlementBox({ order }: { order: Order | null | undefined }) {
+  if (!order) return null;
+  const cur = order.currency;
+  const collect = num(order.grandTotal);
+  const payRestaurant =
+    num(order.totalOrderPrice) -
+    num(order.taxAmount) -
+    num(order.storeShareAmount) -
+    num(order.storeDiscountShareAmount) -
+    num(order.storTotalpromo) +
+    num(order.campaignPlatformShare);
+  const appCredit =
+    num(order.offerfee) +
+    num(order.appTotalpromo) +
+    num(order.diffDiscounted) +
+    num(order.platformShareAmount) +
+    num(order.platformDiscountShareAmount) +
+    num(order.campaignPlatformShare) +
+    // diffPromoCode (إجمالي البرومو) لا يُعوَّض: حصة التطبيق appTotalpromo فقط
+    num(order.deliveryCost);
+  const driverDebt = num(order.totalFeePlatform) - appCredit;
+  const driverGain = collect - payRestaurant - driverDebt;
+
+  return (
+    <div className="bg-sky-50 border border-sky-200 rounded p-2 my-2 space-y-1">
+      <p className="font-semibold text-sky-800 text-xs uppercase tracking-wider">🛵 Règlement chauffeur</p>
+      <MoneyRow label="Encaissé du client" value={collect} currency={cur} />
+      <MoneyRow label="Payé au restaurant" value={payRestaurant} currency={cur} tone="text-red-500" sign="-" />
+      <MoneyRow label="Frais plateforme" value={num(order.totalFeePlatform)} currency={cur} tone="text-red-500" sign="-" />
+      {appCredit > 0 && (
+        <MoneyRow label="Pris en charge par l'app" value={appCredit} currency={cur} tone="text-green-700" sign="+" />
+      )}
+      {num(order.campaignPlatformShare) > 0 && (
+        <p className="text-[11px] text-sky-700 italic">
+          * dont part app remise publicité : {Math.round(num(order.campaignPlatformShare))} {cur}
+        </p>
+      )}
+      {num(order.deliveryCost) > 0 && (
+        <p className="text-[11px] text-sky-700 italic">
+          * dont soutien livraison (boost) : {Math.round(num(order.deliveryCost))} {cur}
+        </p>
+      )}
+      <div className="border-t border-dashed border-sky-300 pt-1">
+        <MoneyRow
+          label={driverDebt >= 0 ? "Dette chauffeur envers l'app" : "L'app doit au chauffeur"}
+          value={Math.abs(driverDebt)}
+          currency={cur}
+          tone={driverDebt >= 0 ? "text-red-600" : "text-green-700"}
+          bold
+        />
+        <MoneyRow label="Gain net chauffeur" value={driverGain} currency={cur} tone="text-green-700" bold />
       </div>
     </div>
   );

@@ -65,7 +65,18 @@ export type Order = {
   };
   newdriverFees:number,
   distance:number,
-  grandTotal:number
+  grandTotal:number,
+  // حصص التوصيل المجاني وتخفيض الطلب
+  storeShareAmount?: number;
+  platformShareAmount?: number;
+  storeDiscountShareAmount?: number;
+  platformDiscountShareAmount?: number;
+  deliveryCost?: number; // دعم التوصيل (Boost) الذي تدفعه المنصة للسائق
+  // تخفيض إعلانات الرئيسية (Home-ads): totalOrderPrice بعده، originalFoodTotal قبله
+  originalFoodTotal?: number;
+  campaignDiscount?: number;
+  campaignStoreShare?: number;
+  campaignPlatformShare?: number;
 };
 
 export type DiscountSponsoredBy = {
@@ -105,6 +116,10 @@ export type ListOrder = {
   offer?: boolean;
   discount?: number;
   listSuplement?: SuplementChoice[];
+  // تخفيض إعلان الرئيسية على هذا السطر (للوحدة)
+  campaignUnitDiscount?: number;
+  campaignRestaurantShare?: number; // نسبة المطعم %
+  campaignAdId?: string;
 };
 
 // export type Suplement =  {
