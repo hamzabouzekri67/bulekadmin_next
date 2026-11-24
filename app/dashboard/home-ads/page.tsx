@@ -54,7 +54,30 @@ const emptyForm = (): HomeAdForm => ({
   order: "0",
   startAt: "",
   endAt: "",
+  scheduleOn: false,
+  scheduleDays: [5],
+  scheduleFrom: "18:00",
+  scheduleTo: "23:00",
 });
+
+// ─── التكرار الأسبوعي (توقيت الجزائر) ───
+const DAY_NAMES = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+const toHHMM = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+const toMin = (hhmm: string) => {
+  const [h, m] = hhmm.split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
+};
+
+/** "كل جمعة من 18:00 إلى 23:00" */
+function scheduleText(days: number[], from: string, to: string): string {
+  const d =
+    days.length === 0 || days.length === 7
+      ? "كل يوم"
+      : "كل " + [...days].sort().map((i) => DAY_NAMES[i]).join(" و");
+  if (from === to) return `${d} طوال اليوم`;
+  const crosses = toMin(to) < toMin(from);
+  return `${d} من ${from} إلى ${to}${crosses ? " (اليوم التالي)" : ""}`;
+}
 
 /** ISO → قيمة input datetime-local بالتوقيت المحلي */
 function toLocalInput(iso: string | null): string {
@@ -357,6 +380,10 @@ export default function HomeAdsPage() {
       order: String(ad.order ?? 0),
       startAt: toLocalInput(ad.startAt),
       endAt: toLocalInput(ad.endAt),
+      scheduleOn: !!ad.schedule,
+      scheduleDays: ad.schedule?.daysOfWeek ?? [5],
+      scheduleFrom: ad.schedule ? toHHMM(ad.schedule.from) : "18:00",
+      scheduleTo: ad.schedule ? toHHMM(ad.schedule.to) : "23:00",
     });
     setImage(null);
     setExistingImage(ad.imageUrl || "");
@@ -383,13 +410,17 @@ export default function HomeAdsPage() {
       .find(
         (it) =>
           it.discount &&
-          (!(it.discount.value > 0) ||
-            (it.discount.type === "percentage" && it.discount.value > 90) ||
+          ((it.discount.type === "bogo"
+            ? !((it.discount.buyQty ?? 1) >= 1 && (it.discount.freeQty ?? 1) >= 1 && (it.discount.maxFree ?? 2) >= 1)
+            : !(it.discount.value > 0) || (it.discount.type === "percentage" && it.discount.value > 90)) ||
             it.discount.restaurantShare < 0 ||
             it.discount.restaurantShare > 100),
       );
     if (badDiscount) {
-      setNotice({ ok: false, text: `تخفيض غير صالح على "${badDiscount.title}" (النسبة 1-90%، حصة المطعم 0-100%)` });
+      setNotice({
+        ok: false,
+        text: `تخفيض غير صالح على "${badDiscount.title}" (النسبة 1-90%، حصة المطعم 0-100%، أعداد العرض 1 أو أكثر)`,
+      });
       return;
     }
     if (!form.id && !image) {
@@ -535,15 +566,48 @@ export default function HomeAdsPage() {
             </div>
             <p className="text-xs text-gray-400">اللغة غير المعبأة تعرض العربية بدلها.</p>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <ColorField label="الخلفية" value={form.bgColor} onChange={(v) => setForm((f) => ({ ...f, bgColor: v }))} />
-              <ColorField label="النص" value={form.textColor} onChange={(v) => setForm((f) => ({ ...f, textColor: v }))} />
-              <ColorField label="الزر" value={form.buttonColor} onChange={(v) => setForm((f) => ({ ...f, buttonColor: v }))} />
-              <ColorField
-                label="نص الزر"
-                value={form.buttonTextColor}
-                onChange={(v) => setForm((f) => ({ ...f, buttonTextColor: v }))}
-              />
+            <div className="rounded-2xl border border-gray-200 bg-gray-50/60 p-4 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="text-sm font-bold text-gray-700">الألوان</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400">قوالب جاهزة:</span>
+                  {COLOR_PRESETS.map((p) => (
+                    <button
+                      key={p.bg + p.button}
+                      type="button"
+                      title="تطبيق القالب"
+                      onClick={() =>
+                        setForm((f) => ({ ...f, bgColor: p.bg, textColor: p.text, buttonColor: p.button, buttonTextColor: p.buttonText }))
+                      }
+                      className="relative w-7 h-7 rounded-full ring-1 ring-black/10 hover:scale-110 transition-transform overflow-hidden"
+                      style={{ background: p.bg }}
+                    >
+                      <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 rounded-full ring-1 ring-black/10" style={{ background: p.button }} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <ColorField label="الخلفية" value={form.bgColor} onChange={(v) => setForm((f) => ({ ...f, bgColor: v }))} />
+                    <ColorField label="النص" value={form.textColor} onChange={(v) => setForm((f) => ({ ...f, textColor: v }))} />
+                  </div>
+                  <ContrastHint fg={form.textColor} bg={form.bgColor} />
+                </div>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <ColorField label="الزر" value={form.buttonColor} onChange={(v) => setForm((f) => ({ ...f, buttonColor: v }))} />
+                    <ColorField
+                      label="نص الزر"
+                      value={form.buttonTextColor}
+                      onChange={(v) => setForm((f) => ({ ...f, buttonTextColor: v }))}
+                    />
+                  </div>
+                  <ContrastHint fg={form.buttonTextColor} bg={form.buttonColor} />
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -559,6 +623,75 @@ export default function HomeAdsPage() {
               <Field label="الترتيب (الأصغر أولاً)">
                 <input type="number" className={inputClass} value={form.order} onChange={(e) => setForm((f) => ({ ...f, order: e.target.value }))} />
               </Field>
+            </div>
+
+            {/* تكرار أسبوعي: يظهر الإعلان وتُطبق تخفيضاته فقط في هذه الأيام والساعات */}
+            <div className="border border-gray-100 rounded-xl p-3 space-y-3">
+              <label className="flex items-center gap-2 text-sm font-bold text-gray-800">
+                <input
+                  type="checkbox"
+                  checked={form.scheduleOn}
+                  onChange={(e) => setForm((f) => ({ ...f, scheduleOn: e.target.checked }))}
+                />
+                تكرار أسبوعي (أيام وساعات محددة)
+              </label>
+              {form.scheduleOn && (
+                <>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, scheduleDays: [] }))}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                        form.scheduleDays.length === 0 ? "bg-red-600 text-white border-red-600" : "bg-white text-gray-700 border-gray-200"
+                      }`}
+                    >
+                      كل يوم
+                    </button>
+                    {DAY_NAMES.map((name, i) => {
+                      const on = form.scheduleDays.includes(i);
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() =>
+                            setForm((f) => ({
+                              ...f,
+                              scheduleDays: on ? f.scheduleDays.filter((d) => d !== i) : [...f.scheduleDays, i].sort(),
+                            }))
+                          }
+                          className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                            on ? "bg-red-600 text-white border-red-600" : "bg-white text-gray-700 border-gray-200"
+                          }`}
+                        >
+                          {name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Field label="من الساعة">
+                      <input
+                        type="time"
+                        className={inputClass}
+                        value={form.scheduleFrom}
+                        onChange={(e) => setForm((f) => ({ ...f, scheduleFrom: e.target.value }))}
+                      />
+                    </Field>
+                    <Field label="إلى الساعة">
+                      <input
+                        type="time"
+                        className={inputClass}
+                        value={form.scheduleTo}
+                        onChange={(e) => setForm((f) => ({ ...f, scheduleTo: e.target.value }))}
+                      />
+                    </Field>
+                  </div>
+                  <p className="text-xs text-gray-600">
+                    🕕 يظهر <b>{scheduleText(form.scheduleDays, form.scheduleFrom, form.scheduleTo)}</b> (توقيت الجزائر).
+                    تخفيضات منتجات الإعلان تُطبق في هذه الأوقات فقط. يعمل مع تاريخي البداية والنهاية إن حُددا.
+                  </p>
+                </>
+              )}
             </div>
 
             {/* ما يفتحه الضغط على الإعلان */}
@@ -983,6 +1116,14 @@ export default function HomeAdsPage() {
                       ) : (
                         <span>يفتح صفحة العروض</span>
                       )}
+                      {ad.schedule && (
+                        <>
+                          <br />
+                          <span className="text-purple-700 font-semibold">
+                            🕕 {scheduleText(ad.schedule.daysOfWeek ?? [], toHHMM(ad.schedule.from), toHHMM(ad.schedule.to))}
+                          </span>
+                        </>
+                      )}
                       {expired && <span className="text-red-600 font-semibold"> · منتهي</span>}
                       {!ad.isActive && <span className="text-gray-400 font-semibold"> · متوقف</span>}
                     </div>
@@ -1028,21 +1169,75 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+const COLOR_PRESETS = [
+  { bg: "#317ee3", text: "#ffffff", button: "#ffffff", buttonText: "#317ee3" },
+  { bg: "#111827", text: "#ffffff", button: "#facc15", buttonText: "#111827" },
+  { bg: "#fef3c7", text: "#78350f", button: "#b45309", buttonText: "#ffffff" },
+  { bg: "#dc2626", text: "#ffffff", button: "#ffffff", buttonText: "#dc2626" },
+  { bg: "#ecfdf5", text: "#065f46", button: "#059669", buttonText: "#ffffff" },
+];
+
+const HEX_RE = /^#[0-9a-f]{6}$/i;
+
+function luminance(hex: string) {
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function ContrastHint({ fg, bg }: { fg: string; bg: string }) {
+  if (!HEX_RE.test(fg) || !HEX_RE.test(bg)) return null;
+  const [a, b] = [luminance(fg), luminance(bg)];
+  const ratio = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  const ok = ratio >= 3;
   return (
-    <label className="block">
-      <span className="block text-xs font-semibold text-gray-500 mb-2">{label}</span>
-      <div className="flex items-center gap-2 border border-gray-200 rounded-xl p-1.5">
-        <input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="w-9 h-9 rounded cursor-pointer border-0" />
+    <div className="flex items-center gap-2 text-xs">
+      <span className="px-2 py-0.5 rounded-md font-semibold ring-1 ring-black/5" style={{ background: bg, color: fg }}>
+        Aa
+      </span>
+      <span className={ok ? "text-green-600" : "text-amber-600"}>
+        {ok ? "وضوح جيد" : "التباين ضعيف، قد يصعب قراءة النص"} ({ratio.toFixed(1)}:1)
+      </span>
+    </div>
+  );
+}
+
+function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const valid = HEX_RE.test(value);
+  return (
+    <div>
+      <span className="block text-xs font-semibold text-gray-500 mb-1.5">{label}</span>
+      <div
+        className={`flex items-center gap-2 bg-white border rounded-xl p-1.5 transition focus-within:ring-2 focus-within:ring-blue-100 ${
+          valid ? "border-gray-200 focus-within:border-blue-400" : "border-red-300"
+        }`}
+      >
+        <label
+          className="relative shrink-0 w-8 h-8 rounded-lg ring-1 ring-black/10 shadow-inner cursor-pointer overflow-hidden"
+          style={{ background: valid ? value : "#ffffff" }}
+        >
+          <input
+            type="color"
+            value={valid ? value : "#ffffff"}
+            onChange={(e) => onChange(e.target.value)}
+            className="absolute inset-0 opacity-0 cursor-pointer"
+          />
+        </label>
         <input
-          className="flex-1 text-sm font-mono bg-transparent outline-none"
+          className="w-full min-w-0 text-sm font-mono uppercase bg-transparent outline-none text-gray-700"
           dir="ltr"
           value={value}
           maxLength={7}
-          onChange={(e) => onChange(e.target.value)}
+          placeholder="#FFFFFF"
+          onChange={(e) => {
+            const v = e.target.value.trim();
+            onChange(v && !v.startsWith("#") ? `#${v}` : v);
+          }}
         />
       </div>
-    </label>
+    </div>
   );
 }
 
@@ -1110,7 +1305,7 @@ function DiscountEditor({
   const base = parseFloat(String(price ?? "").replace(/,/g, "")) || 0;
   if (!value) {
     const inheritedAmount =
-      inherited && base > 0
+      inherited && inherited.type !== "bogo" && base > 0
         ? Math.min(
             base,
             Math.round(inherited.type === "percentage" ? (base * inherited.value) / 100 : inherited.value),
@@ -1123,6 +1318,9 @@ function DiscountEditor({
             <span className="line-through text-gray-400">{base}</span> → <b>{base - inheritedAmount}</b>
           </p>
         )}
+        {inherited?.type === "bogo" && (
+          <p className="text-[10px] font-semibold text-purple-700">{bogoLabel(inherited)}</p>
+        )}
         <button
           type="button"
           onClick={() => onChange({ type: "percentage", value: 10, restaurantShare: inherited?.restaurantShare ?? 0 })}
@@ -1133,34 +1331,68 @@ function DiscountEditor({
       </>
     );
   }
+  const isBogo = value.type === "bogo";
   const amount =
-    base > 0
+    base > 0 && !isBogo
       ? Math.min(base, Math.round(value.type === "percentage" ? (base * value.value) / 100 : value.value))
       : 0;
   const storePart = Math.round((amount * value.restaurantShare) / 100);
+  // bogo: قيمة كل قطعة مجانية = السعر الأساسي
+  const bogoStorePart = Math.round((base * value.restaurantShare) / 100);
+
+  const changeType = (type: ItemDiscount["type"]) => {
+    if (type === "bogo") {
+      onChange({ type, value: 0, buyQty: 1, freeQty: 1, maxFree: 2, restaurantShare: 100 });
+    } else {
+      onChange({ type, value: value.value > 0 ? value.value : 10, restaurantShare: value.restaurantShare });
+    }
+  };
+  const qtyInput = (label: string, key: "buyQty" | "freeQty" | "maxFree", def: number) => (
+    <label className="flex items-center justify-between gap-1">
+      <span className="text-gray-600">{label}</span>
+      <input
+        type="number"
+        min={1}
+        className="w-12 rounded border border-purple-200 bg-white px-1 py-0.5"
+        value={value[key] ?? def}
+        onChange={(e) => onChange({ ...value, [key]: Math.max(1, Math.floor(Number(e.target.value) || 1)) })}
+      />
+    </label>
+  );
+
   return (
-    <div className="mt-1.5 rounded bg-green-50 p-1.5 space-y-1 text-[11px]">
+    <div className={`mt-1.5 rounded p-1.5 space-y-1 text-[11px] ${isBogo ? "bg-purple-50" : "bg-green-50"}`}>
       <div className="flex gap-1">
         <select
           className="flex-1 rounded border border-green-200 bg-white px-1 py-0.5"
           value={value.type}
-          onChange={(e) => onChange({ ...value, type: e.target.value as ItemDiscount["type"] })}
+          onChange={(e) => changeType(e.target.value as ItemDiscount["type"])}
         >
           <option value="percentage">%</option>
           <option value="fixed">مبلغ</option>
+          <option value="bogo">1 acheté = 1 offert</option>
         </select>
-        <input
-          type="number"
-          min={0}
-          max={value.type === "percentage" ? 90 : undefined}
-          className="w-16 rounded border border-green-200 bg-white px-1 py-0.5"
-          value={value.value}
-          onChange={(e) => onChange({ ...value, value: Number(e.target.value) })}
-        />
+        {!isBogo && (
+          <input
+            type="number"
+            min={0}
+            max={value.type === "percentage" ? 90 : undefined}
+            className="w-16 rounded border border-green-200 bg-white px-1 py-0.5"
+            value={value.value}
+            onChange={(e) => onChange({ ...value, value: Number(e.target.value) })}
+          />
+        )}
         <button type="button" title="إزالة التخفيض" onClick={() => onChange(null)} className="px-1 text-red-600">
           ✕
         </button>
       </div>
+      {isBogo && (
+        <>
+          {qtyInput("يشتري", "buyQty", 1)}
+          {qtyInput("يأخذ مجاناً", "freeQty", 1)}
+          {qtyInput("أقصى مجاني/طلب", "maxFree", 2)}
+        </>
+      )}
       <label className="flex items-center justify-between gap-1">
         <span className="text-gray-600">المطعم يتحمل</span>
         <span className="flex items-center gap-0.5">
@@ -1175,13 +1407,30 @@ function DiscountEditor({
           %
         </span>
       </label>
-      {base > 0 && (
-        <p className="text-gray-700 leading-tight">
-          <span className="line-through text-gray-400">{base}</span> → <b>{base - amount}</b>
-          <br />
-          مطعم {storePart} · تطبيق {amount - storePart}
+      {isBogo ? (
+        <p className="text-purple-800 leading-tight">
+          <b>{bogoLabel(value)}</b>
+          {base > 0 && (
+            <>
+              <br />
+              كل قطعة مجانية ({base}): مطعم {bogoStorePart} · تطبيق {base - bogoStorePart}
+            </>
+          )}
         </p>
+      ) : (
+        base > 0 && (
+          <p className="text-gray-700 leading-tight">
+            <span className="line-through text-gray-400">{base}</span> → <b>{base - amount}</b>
+            <br />
+            مطعم {storePart} · تطبيق {amount - storePart}
+          </p>
+        )
       )}
     </div>
   );
+}
+
+/** "يشتري 1 ويأخذ 1 مجاناً — حد أقصى 2 مجاناً في الطلب" */
+function bogoLabel(d: ItemDiscount) {
+  return `يشتري ${d.buyQty ?? 1} ويأخذ ${d.freeQty ?? 1} مجاناً — حد أقصى ${d.maxFree ?? 2} مجاناً في الطلب`;
 }

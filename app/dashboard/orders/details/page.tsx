@@ -1115,7 +1115,9 @@ function CampaignDiscountBox({ order }: { order: Order | null | undefined }) {
   const storeShare = num(order.campaignStoreShare);
   const appShare = num(order.campaignPlatformShare);
   const original = num(order.originalFoodTotal) || num(order.totalOrderPrice) + discount;
-  const lines = (order.listOrder ?? []).filter((l) => num(l.campaignUnitDiscount) > 0);
+  const lines = (order.listOrder ?? []).filter(
+    (l) => num(l.campaignUnitDiscount) > 0 || num(l.freeQuantity) > 0,
+  );
 
   return (
     <div className="bg-purple-50 border border-purple-200 rounded p-2 my-2 space-y-1">
@@ -1132,9 +1134,18 @@ function CampaignDiscountBox({ order }: { order: Order | null | undefined }) {
             <div key={i} className="flex justify-between text-[11px] text-gray-600">
               <span className="truncate pr-2">
                 {l.title} × {l.qentity} ({num(l.campaignRestaurantShare)}% resto)
+                {num(l.freeQuantity) > 0 && (
+                  <span className="ml-1 rounded bg-purple-600 px-1 text-[10px] font-bold text-white">
+                    1 acheté = 1 offert · {num(l.paidQuantity)} payé + {num(l.freeQuantity)} offert
+                  </span>
+                )}
               </span>
               <span className="text-red-500 whitespace-nowrap">
-                -{Math.round(num(l.campaignUnitDiscount) * num(l.qentity))} {cur}
+                -
+                {num(l.freeQuantity) > 0
+                  ? Math.round(num(l.originalLineTotal) - num(l.finalLineTotal))
+                  : Math.round(num(l.campaignUnitDiscount) * num(l.qentity))}{" "}
+                {cur}
               </span>
             </div>
           ))}

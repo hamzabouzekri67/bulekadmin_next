@@ -8,10 +8,15 @@ export type L10n = Record<Lang, string>;
  */
 /** تخفيض حقيقي مؤقت على منتج (طوال فترة الإعلان) */
 export interface ItemDiscount {
-  type: "percentage" | "fixed";
+  /** bogo = "1 acheté = 1 offert" */
+  type: "percentage" | "fixed" | "bogo";
   value: number;
   /** نسبة ما يتحمله المطعم 0-100؛ الباقي على التطبيق */
   restaurantShare: number;
+  /** bogo: يشتري buyQty ويأخذ freeQty مجاناً، بحد أقصى maxFree مجاناً في الطلب */
+  buyQty?: number;
+  freeQty?: number;
+  maxFree?: number;
 }
 
 export type AdTarget = "offers" | "store";
@@ -63,7 +68,16 @@ export interface HomeAd {
   order: number;
   startAt: string | null;
   endAt: string | null;
+  /** تكرار أسبوعي (توقيت الجزائر) — null = بدون تكرار */
+  schedule?: AdSchedule | null;
   createdAt?: string;
+}
+
+/** daysOfWeek: 0 = الأحد … 6 = السبت (فارغ = كل يوم)؛ from/to دقائق منذ منتصف الليل */
+export interface AdSchedule {
+  daysOfWeek: number[];
+  from: number;
+  to: number;
 }
 
 /** الحقول المرسلة للحفظ (FormData) */
@@ -84,6 +98,11 @@ export interface HomeAdForm {
   order: string;
   startAt: string;
   endAt: string;
+  /** تكرار أسبوعي */
+  scheduleOn: boolean;
+  scheduleDays: number[];
+  scheduleFrom: string; // "HH:MM"
+  scheduleTo: string; // "HH:MM"
 }
 
 /** منتج كما يرجعه /dash/findProductFeatured */

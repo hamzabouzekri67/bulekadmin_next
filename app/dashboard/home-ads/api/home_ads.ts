@@ -47,6 +47,13 @@ export async function saveHomeAd(form: HomeAdForm, image: File | null) {
   data.append("order", form.order);
   data.append("startAt", form.startAt ? new Date(form.startAt).toISOString() : "");
   data.append("endAt", form.endAt ? new Date(form.endAt).toISOString() : "");
+  // تكرار أسبوعي: "" = بدون تكرار (الخادم يحوّل "HH:MM" إلى دقائق)
+  data.append(
+    "schedule",
+    form.scheduleOn
+      ? JSON.stringify({ daysOfWeek: form.scheduleDays, from: form.scheduleFrom, to: form.scheduleTo })
+      : "",
+  );
   if (image) data.append("adImage", image);
 
   return request<HomeAd>(SAVE, { method: "POST", headers: await authHeader(), body: data });

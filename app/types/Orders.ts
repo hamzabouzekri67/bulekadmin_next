@@ -120,6 +120,13 @@ export type ListOrder = {
   campaignUnitDiscount?: number;
   campaignRestaurantShare?: number; // نسبة المطعم %
   campaignAdId?: string;
+  // عرض "1 acheté = 1 offert": totalQuantity يحضّرها المتجر = paidQuantity + freeQuantity
+  campaignType?: "percentage" | "fixed" | "bogo" | null;
+  totalQuantity?: number;
+  paidQuantity?: number;
+  freeQuantity?: number;
+  originalLineTotal?: number;
+  finalLineTotal?: number;
 };
 
 // export type Suplement =  {
