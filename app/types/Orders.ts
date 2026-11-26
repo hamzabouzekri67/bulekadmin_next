@@ -77,6 +77,16 @@ export type Order = {
   campaignDiscount?: number;
   campaignStoreShare?: number;
   campaignPlatformShare?: number;
+  // محفظة الكاش باك
+  paymentMethod?: "cash" | "cash_wallet" | "card";
+  totalAmount?: number;
+  walletUsed?: number; // مدفوع من محفظة الزبون
+  cashToCollect?: number; // ما قبضه السائق كاشاً
+  cashbackEarned?: number; // كسبه الزبون عند التسليم (= app + store)
+  appCashbackEarned?: number; // حصة التطبيق
+  storeCashbackEarned?: number; // حصة المحل
+  storeCashbackShareAmount?: number; // حصة المحل المثبّتة عند الإنشاء: تُقتطع من دفع المطعم وتُسترجع من رصيد السائق
+  cashbackSourceMode?: "APP_ONLY" | "STORE_ONLY" | "BOTH" | null;
 };
 
 export type DiscountSponsoredBy = {

@@ -272,6 +272,11 @@ const AdminProfileDetails = () => {
                 </span>{" "}
                 au compte de {currentAdmin?.userName?.split("@")[0]} ?
               </p>
+              {(currentAdmin?.role as string | undefined) === "store_owner" && (
+                <p className="-mt-4 mb-6 text-xs font-bold text-[#e91818] bg-red-50 rounded-xl p-2">
+                  Point de recharge : ce montant sera ajouté à sa dette envers Bulek.
+                </p>
+              )}
 
               <div className="flex flex-col w-full gap-3">
                 <button

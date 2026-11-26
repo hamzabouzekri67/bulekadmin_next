@@ -1174,7 +1174,9 @@ function DriverSettlementBox({ order }: { order: Order | null | undefined }) {
     num(order.taxAmount) -
     num(order.storeShareAmount) -
     num(order.storeDiscountShareAmount) -
-    num(order.storTotalpromo) +
+    num(order.storTotalpromo) -
+    // حصة المطعم من كاش باك الزبون: تُقتطع من دفع المطعم
+    num(order.storeCashbackShareAmount) +
     num(order.campaignPlatformShare);
   const appCredit =
     num(order.offerfee) +
@@ -1185,15 +1187,37 @@ function DriverSettlementBox({ order }: { order: Order | null | undefined }) {
     num(order.campaignPlatformShare) +
     // diffPromoCode (إجمالي البرومو) لا يُعوَّض: حصة التطبيق appTotalpromo فقط
     num(order.deliveryCost);
-  const driverDebt = num(order.totalFeePlatform) - appCredit;
+  // + حصة المطعم من الكاش باك: بقيت مع السائق، تُسترجع من رصيده الأساسي
+  const driverDebt = num(order.totalFeePlatform) - appCredit + num(order.storeCashbackShareAmount);
   const driverGain = collect - payRestaurant - driverDebt;
 
   return (
     <div className="bg-sky-50 border border-sky-200 rounded p-2 my-2 space-y-1">
       <p className="font-semibold text-sky-800 text-xs uppercase tracking-wider">🛵 Règlement chauffeur</p>
       <MoneyRow label="Encaissé du client" value={collect} currency={cur} />
+      {/* محفظة الكاش باك: جزء دفعه الزبون من محفظته → يُضاف لمحفظة المستحقات للسائق */}
+      {num(order.walletUsed) > 0 && (
+        <div className="pl-3 space-y-0.5">
+          <MoneyRow label="• en espèces" value={num(order.cashToCollect)} currency={cur} />
+          <MoneyRow
+            label="• via cashback client → solde remboursement chauffeur"
+            value={num(order.walletUsed)}
+            currency={cur}
+            tone="text-purple-700"
+          />
+        </div>
+      )}
       <MoneyRow label="Payé au restaurant" value={payRestaurant} currency={cur} tone="text-red-500" sign="-" />
       <MoneyRow label="Frais plateforme" value={num(order.totalFeePlatform)} currency={cur} tone="text-red-500" sign="-" />
+      {num(order.storeCashbackShareAmount) > 0 && (
+        <MoneyRow
+          label="Cashback part restaurant (gardé par le chauffeur → débité de son solde)"
+          value={num(order.storeCashbackShareAmount)}
+          currency={cur}
+          tone="text-red-500"
+          sign="-"
+        />
+      )}
       {appCredit > 0 && (
         <MoneyRow label="Pris en charge par l'app" value={appCredit} currency={cur} tone="text-green-700" sign="+" />
       )}
@@ -1217,6 +1241,23 @@ function DriverSettlementBox({ order }: { order: Order | null | undefined }) {
         />
         <MoneyRow label="Gain net chauffeur" value={driverGain} currency={cur} tone="text-green-700" bold />
       </div>
+      {num(order.cashbackEarned) > 0 && (
+        <div className="text-[11px] text-purple-700 space-y-0.5">
+          <p className="italic">
+            🎁 Cashback gagné par le client : {Math.round(num(order.cashbackEarned))} {cur}
+          </p>
+          {/* الطلبات القديمة بلا تفصيل = كله من التطبيق */}
+          {num(order.storeCashbackEarned) > 0 || num(order.appCashbackEarned) > 0 ? (
+            <p>
+              Payé par l&apos;app : {Math.round(num(order.appCashbackEarned))} {cur} · Payé par le restaurant :{" "}
+              <b>{Math.round(num(order.storeCashbackEarned))} {cur}</b>
+              {num(order.storeCashbackEarned) > 0 && " (déduit du paiement restaurant)"}
+            </p>
+          ) : (
+            <p>Payé par l&apos;app</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

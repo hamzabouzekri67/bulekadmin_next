@@ -5,6 +5,7 @@ import { Search, Wallet, X, Check, AlertCircle } from "lucide-react";
 import { useUser } from "@/app/context/UserContext";
 import {
   GetStoreOwnerDrivers,
+  GetStoreOwnerSummary,
   RechargeDriver,
   type StoreOwnerDriver as Driver,
 } from "../service/storeOwner";
@@ -37,6 +38,14 @@ export default function RechargePage() {
   // يمنع الضغط المزدوج قبل أن تتحدّث الحالة، ويحفظ مفتاح الطلب عند انقطاع الشبكة
   const inFlight = useRef(false);
   const pendingKey = useRef<{ driverId: string; amount: number; id: string } | null>(null);
+
+  // عمولتك على كل شحن (% تحددها المنصة) — تُنقص دينك للشركة
+  const [commissionPct, setCommissionPct] = useState(0);
+  useEffect(() => {
+    GetStoreOwnerSummary().then((r) => {
+      if (r.ok) setCommissionPct(Number(r.result.rates?.rechargeCommissionPercent ?? 0));
+    });
+  }, []);
 
   const trimmed = query.trim();
   const queryTooShort = trimmed.length < MIN_SEARCH_LENGTH;
@@ -74,6 +83,7 @@ export default function RechargePage() {
   const amountValid =
     Number.isInteger(amountNumber) && amountNumber >= MIN_AMOUNT;
   const insufficient = amountValid && amountNumber > ownerBalance;
+  const commission = amountValid ? Math.round(amountNumber * commissionPct) / 100 : 0;
 
   const openConfirm = () => {
     setError("");
@@ -105,7 +115,9 @@ export default function RechargePage() {
     setConfirmOpen(false);
     if (res.success) {
       setSuccess(
-        `${amountNumber} DZD ont été ajoutés au compte de ${selected.firstName}.`,
+        commission > 0
+          ? `${amountNumber} DZD ont été ajoutés au compte de ${selected.firstName}. Votre commission : ${commission.toLocaleString("fr-FR")} DZD (déduite de votre dette).`
+          : `${amountNumber} DZD ont été ajoutés au compte de ${selected.firstName}.`,
       );
       setAmount("");
       setSelected(null);
@@ -265,6 +277,12 @@ export default function RechargePage() {
             {insufficient && (
               <p className="text-xs text-red-600 mt-2">
                 Le montant dépasse votre solde.
+              </p>
+            )}
+            {commission > 0 && !insufficient && (
+              <p className="text-xs text-gray-700 mt-2 bg-gray-50 rounded-lg p-2">
+                Votre commission ({commissionPct}%) :{" "}
+                <b className="text-green-700">{commission.toLocaleString("fr-FR")} DZD</b>
               </p>
             )}
           </div>

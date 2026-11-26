@@ -25,6 +25,10 @@ import {
   ShoppingBasket,
   Wallet,
   Megaphone,
+  Banknote,
+  PiggyBank,
+  Landmark,
+  Gift,
 } from "lucide-react";
 
 export default function AppBar() {
@@ -181,12 +185,36 @@ export default function AppBar() {
       icon: <Megaphone size={20} />,
       roles: ["super_admin"],
     },
+    {
+      href: "/dashboard/cashback",
+      label: "الكاش باك",
+      icon: <PiggyBank size={20} />,
+      roles: ["super_admin"],
+    },
+    {
+      href: "/dashboard/store-owners",
+      label: "ديون نقاط الشحن",
+      icon: <Landmark size={20} />,
+      roles: ["super_admin"],
+    },
+    {
+      href: "/dashboard/referral",
+      label: "نظام الدعوة",
+      icon: <Gift size={20} />,
+      roles: ["super_admin"],
+    },
 
     // ===== صاحب المتجر (store_owner) =====
     {
       href: "/dashboard/store-owner/recharge",
       label: "Recharger livreurs",
       icon: <Wallet size={20} />,
+      roles: ["store_owner"],
+    },
+    {
+      href: "/dashboard/store-owner/cashout",
+      label: "Retrait livreurs",
+      icon: <Banknote size={20} />,
       roles: ["store_owner"],
     },
     {
