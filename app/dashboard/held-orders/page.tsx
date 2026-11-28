@@ -66,7 +66,10 @@ type Res<T> = { status: boolean; code?: string; result?: T };
 
 function beep() {
   try {
-    const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+    // Safari القديم: webkitAudioContext
+    const Ctx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     const ctx = new Ctx();
     [0, 0.25].forEach((t) => {
       const o = ctx.createOscillator();
