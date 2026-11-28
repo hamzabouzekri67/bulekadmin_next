@@ -6,7 +6,7 @@ import { Preferences } from "@capacitor/preferences";
 import { useUser } from "../context/UserContext"; // عدّل المسار حسب مكان الملف
 
 // ===== إعدادات المسارات =====
-const PUBLIC_ROUTES = ["/login"];
+const PUBLIC_ROUTES = ["/login", "/forgot-password"];
 
 const ROLE_HOME: Record<string, string> = {
   store_owner: "/dashboard/store-owner/recharge",
@@ -16,8 +16,10 @@ const ROLE_HOME: Record<string, string> = {
 
 // المسارات المسموحة لكل دور (أي مسار غير مذكور = ممنوع)
 const ROLE_ROUTES: Record<string, string[]> = {
-  store_owner: ["/dashboard/store-owner"],
+  store_owner: ["/dashboard/store-owner", "/dashboard/account"],
   admin: [
+    "/dashboard/account", // حسابي: البريد، كلمة السر، الإشعارات، اللغة
+    "/dashboard/held-orders", // طلبيات مشكوك فيها
     "/dashboard/orders", // تشمل /dashboard/orders/history
     "/dashboard/drivers",
     "/dashboard/storelist",

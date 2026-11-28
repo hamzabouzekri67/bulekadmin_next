@@ -94,10 +94,10 @@ export function useLoginController() {
           return;
         }
 
-        if (data.message === "invalid_credentials") {
-          setError("Email أو Password غير صحيح");
+        if (data.message === "account_suspended") {
+          setError("Compte suspendu — contactez le super administrateur / الحساب موقوف");
         } else {
-          setError(data.messaging);
+          setError("Email أو Password غير صحيح");
         }
       } else {
         setError("Email أو Password غير صحيح");

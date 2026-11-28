@@ -1,3 +1,4 @@
+import { Preferences } from "@capacitor/preferences";
 import { User } from "@/app/context/UserContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -12,9 +13,11 @@ export async function sendNotifications(
   try {
     const url = `${API_URL}${SEND_NOTIFICATIONS}`;
 
+    // pushNotfications صار يتطلب التوكن (كان مفتوحاً بلا تحقق)
+    const { value: token } = await Preferences.get({ key: "token" });
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       credentials: "include",
       body: JSON.stringify({
         assistBy: user?.id,

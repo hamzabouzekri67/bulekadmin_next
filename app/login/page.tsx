@@ -98,6 +98,11 @@ export default function LoginPage() {
           )}
         </button>
 
+          <div className="text-center">
+            <a href="/forgot-password" className="text-sm font-semibold text-red-600 hover:underline">
+              Mot de passe oublié ? · نسيت كلمة السر؟
+            </a>
+          </div>
         </form>
 
         {/* تذيل الصفحة */}

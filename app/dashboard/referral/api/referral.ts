@@ -27,6 +27,12 @@ export interface ReferralConfig {
   driverRequiredOrders: number;
   driverInviteClientsEnabled: boolean;
   driverClientRewardAmount: number;
+  loyaltyEnabled: boolean;
+  loyaltyEveryOrders: number;
+  loyaltyRewardType: InviterReward;
+  loyaltyWalletAmount: number;
+  loyaltyMinOrderAmount: number;
+  loyaltyStartAt?: string | null;
   applyWindowDays: number;
   maxReferralsPerUser: number;
   stats?: { client: ReferralStats; driver: ReferralStats; driverClients?: ReferralStats };

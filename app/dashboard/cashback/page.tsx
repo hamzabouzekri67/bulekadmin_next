@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, PiggyBank, Check, AlertCircle, Search, X, Store, SlidersHorizontal } from "lucide-react";
+import { Loader2, HandCoins, Check, AlertCircle, Search, X, Store, SlidersHorizontal } from "lucide-react";
 import type { StoreData } from "@/app/types/store";
 import { searchandFindStore } from "../featured/api/api_featured";
 import {
@@ -389,7 +389,7 @@ export default function CashbackSettingsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-5" dir={lang === "ar" ? "rtl" : "ltr"}>
       <div className="flex items-center gap-3">
-        <PiggyBank className="text-[#e91818]" />
+        <HandCoins className="text-[#e91818]" />
         <div className="flex-1">
           <h2 className="text-xl font-black text-gray-800">{t("title")}</h2>
           <p className="text-sm text-gray-500">{t("subtitle")}</p>

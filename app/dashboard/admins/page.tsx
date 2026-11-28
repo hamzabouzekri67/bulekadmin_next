@@ -58,7 +58,7 @@ const AdminsPage = () => {
             Gérez les accès et les comptes administratifs du système.
           </p>
         </div>
-        <button className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-xl hover:bg-red-600 transition-all duration-300 shadow-lg shadow-black/5 font-bold text-sm uppercase">
+        <button onClick={() => router.push("/dashboard/admin-accounts")} className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-xl hover:bg-red-600 transition-all duration-300 shadow-lg shadow-black/5 font-bold text-sm uppercase">
           <UserPlus size={18} />
           Nouveau Compte
         </button>

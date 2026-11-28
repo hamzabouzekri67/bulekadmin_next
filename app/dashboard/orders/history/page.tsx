@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { GetOrdersHistory } from "./api/history";
 import {
   History,
@@ -20,6 +21,11 @@ import {
 import { useUser } from "@/app/context/UserContext";
 import { Order } from "@/app/types/Orders";
 import { AnnuleOrder } from "../details/api/GetDetailesOrder";
+import CompensationPanel, { type CompensableOrder } from "../details/components/CompensationPanel";
+import RedeliveryPanel, { type RedeliverableOrder } from "../details/components/RedeliveryPanel";
+
+/** الطلبيات المنتهية (مُسلَّمة أو ملغاة) يمكن تعويض زبونها */
+const FINISHED = ["completed", "delivered", "rejected", "incompleted", "cancelled"];
 
 const CANCEL_REASONS = [
   "Erreur dans le contenu de la commande (خطأ في محتويات الطلب أو تفاصيله)",
@@ -287,6 +293,23 @@ export default function OrderHistoryPage() {
                         <Clock size={12} /> {order.status}
                       </span>
                     )}
+                    {FINISHED.includes((order.status ?? "").toLowerCase()) && (
+                      <AfterSales
+                        order={
+                          {
+                            ...(order as unknown as CompensableOrder),
+                            driverId:
+                              (order as unknown as { driverId?: unknown }).driverId ?? order.driver?._id ?? null,
+                          } as CompensableOrder & RedeliverableOrder
+                        }
+                      />
+                    )}
+                    <Link
+                      href={`/dashboard/orders/details?id=${(order as unknown as { _id?: string; id?: string })._id ?? (order as unknown as { id?: string }).id}`}
+                      className="mt-2 block text-xs font-semibold text-gray-500 hover:text-[#e91818] hover:underline"
+                    >
+                      Détails →
+                    </Link>
                     {isSuperAdmin && isOpenOrder(order.status) && (
                       <button
                         type="button"
@@ -442,5 +465,20 @@ export default function OrderHistoryPage() {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * ما بعد البيع في صف السجل: إرسال منتج ناقص أو تعويض مالي (لا يجتمعان).
+ * حالة محلية حتى يختفي الزر الآخر فوراً بعد اختيار أحدهما.
+ */
+function AfterSales({ order }: { order: CompensableOrder & RedeliverableOrder }) {
+  const [row, setRow] = useState(order);
+  useEffect(() => setRow(order), [order]);
+  return (
+    <>
+      <RedeliveryPanel compact order={row} onDone={(r) => r && setRow((o) => ({ ...o, redelivery: r }))} />
+      <CompensationPanel compact order={row} onDone={(c) => c && setRow((o) => ({ ...o, compensation: c }))} />
+    </>
   );
 }

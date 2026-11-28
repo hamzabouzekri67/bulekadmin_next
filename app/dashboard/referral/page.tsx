@@ -26,6 +26,11 @@ const EMPTY: ReferralConfig = {
   driverRequiredOrders: 5,
   driverInviteClientsEnabled: false,
   driverClientRewardAmount: 100,
+  loyaltyEnabled: false,
+  loyaltyEveryOrders: 10,
+  loyaltyRewardType: "FREE_DELIVERY",
+  loyaltyWalletAmount: 200,
+  loyaltyMinOrderAmount: 0,
   applyWindowDays: 7,
   maxReferralsPerUser: 0,
 };
@@ -33,6 +38,7 @@ const EMPTY: ReferralConfig = {
 const ERRORS: Record<string, string> = {
   WALLET_AMOUNT_REQUIRED: "مبلغ الرصيد يجب أن يكون أكبر من 0",
   DRIVER_AMOUNT_REQUIRED: "مبلغ شحن السائق يجب أن يكون أكبر من 0",
+  LOYALTY_AMOUNT_REQUIRED: "مبلغ مكافأة الولاء يجب أن يكون أكبر من 0",
   DRIVER_CLIENT_AMOUNT_REQUIRED: "مبلغ شحن السائق عن الزبون يجب أن يكون أكبر من 0",
 };
 
@@ -292,6 +298,62 @@ export default function ReferralPage() {
             value={cfg.driverClientRewardAmount}
             onChange={(v) => set("driverClientRewardAmount", v)}
             hint="بعد أول طلبية مُسلَّمة للزبون (يخضع لأقل سعر طعام في قسم الزبائن)"
+          />
+        </div>
+      </section>
+
+      {/* الولاء */}
+      <section className="space-y-5 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-base font-bold text-gray-900">
+            <Gift size={18} /> مكافأة الولاء
+          </h2>
+          <Toggle checked={cfg.loyaltyEnabled} onChange={(v) => set("loyaltyEnabled", v)} label="تفعيل الولاء" />
+        </div>
+        <p className="text-xs leading-relaxed text-gray-500">
+          كل عدد من الطلبيات المُسلَّمة يحصل الزبون على مكافأة، ويرى تقدّمه في المحفظة.
+          يُحسب من تاريخ أول تفعيل{cfg.loyaltyStartAt ? ` (${new Date(cfg.loyaltyStartAt).toLocaleDateString("fr-FR")})` : ""}، بلا أثر رجعي.
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {(
+            [
+              ["FREE_DELIVERY", "توصيل مجاني"],
+              ["WALLET", "رصيد في المحفظة"],
+            ] as const
+          ).map(([k, label]) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => set("loyaltyRewardType", k)}
+              className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
+                cfg.loyaltyRewardType === k
+                  ? "border-[#e91818] bg-red-50 text-[#e91818]"
+                  : "border-gray-200 text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <NumberField
+            label="كل كم طلبية"
+            value={cfg.loyaltyEveryOrders}
+            onChange={(v) => set("loyaltyEveryOrders", v)}
+            hint="من 2 إلى 100"
+          />
+          {cfg.loyaltyRewardType === "WALLET" && (
+            <NumberField
+              label="مبلغ المكافأة (دج)"
+              value={cfg.loyaltyWalletAmount}
+              onChange={(v) => set("loyaltyWalletAmount", v)}
+            />
+          )}
+          <NumberField
+            label="أقل سعر طعام يُحسب (دج)"
+            value={cfg.loyaltyMinOrderAmount}
+            onChange={(v) => set("loyaltyMinOrderAmount", v)}
+            hint="0 = كل الطلبيات"
           />
         </div>
       </section>

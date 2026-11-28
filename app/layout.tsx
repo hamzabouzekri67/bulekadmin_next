@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { UserProvider } from "./context/UserContext";
+import { I18nProvider } from "./context/I18nContext";
 import AuthGuard from "./components/AuthGuard";
 import BackButtonHandler from "@/components/BackButtonHandler"; // 1. استورد المكون هنا
 
@@ -51,12 +52,14 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
       >
         <UserProvider>
+          <I18nProvider>
           <AuthGuard>
             {/* 2. قم بإضافة المكون هنا ليعمل في كافة الصفحات المحمية */}
             <BackButtonHandler />
             
             {children}
           </AuthGuard>
+          </I18nProvider>
         </UserProvider>
       </body>
     </html>

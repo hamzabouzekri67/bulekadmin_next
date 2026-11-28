@@ -14,6 +14,8 @@ import {
   handleOpenGoogleMaps,
 } from "../handlerOrders/page";
 import Link from "next/link";
+import CompensationPanel, { type CompensableOrder } from "./components/CompensationPanel";
+import RedeliveryPanel, { type RedeliverableOrder } from "./components/RedeliveryPanel";
 
 function isValidObjectId(id: string) {
   return /^[0-9a-fA-F]{24}$/.test(id);
@@ -851,6 +853,22 @@ const OrderDetails = () => {
               </button>
             </div>
           )}
+
+          {/* تعويض الزبون في المحفظة (منتج ناقص، خطأ، تأخير...) */}
+          {detailesOrders &&
+            ["completed", "rejected", "Incompleted", "incompleted", "cancelled"].includes(detailesOrders.status) && (
+              <div className="mt-4 space-y-2">
+                {/* إرسال المنتج الناقص بدل المال (للطلبيات المكتملة فقط) — لا يجتمع مع التعويض */}
+                <RedeliveryPanel
+                  order={detailesOrders as unknown as RedeliverableOrder}
+                  onDone={() => reloadOrderData()}
+                />
+                <CompensationPanel
+                  order={detailesOrders as unknown as CompensableOrder}
+                  onDone={() => reloadOrderData()}
+                />
+              </div>
+            )}
 
           {/* نافذة التحذير الخاصة بحظر السائق المؤقت عند حدوث عطل وإعادة البحث */}
           {isSearchWarningOpen && (

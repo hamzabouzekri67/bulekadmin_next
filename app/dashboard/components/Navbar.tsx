@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useUser } from "../../context/UserContext";
+import { useI18n } from "../../context/I18nContext";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { Preferences } from "@capacitor/preferences";
@@ -26,9 +27,15 @@ import {
   Wallet,
   Megaphone,
   Banknote,
-  PiggyBank,
+  HandCoins,
   Landmark,
   Gift,
+  Zap,
+  Trophy,
+  Radar,
+  ShieldAlert,
+  UserCircle2,
+  UserX,
 } from "lucide-react";
 
 export default function AppBar() {
@@ -36,6 +43,7 @@ export default function AppBar() {
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { user } = useUser();
+  const { t } = useI18n();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -96,130 +104,172 @@ export default function AppBar() {
 
   const ALL_LINKS: NavLink[] = [
     {
+      href: "/dashboard/account",
+      label: t("nav.account"),
+      icon: <UserCircle2 size={20} />,
+      roles: ["admin", "super_admin", "store_owner"],
+    },
+    {
+      href: "/dashboard/admin-accounts",
+      label: t("nav.adminAccounts"),
+      icon: <ShieldCheck size={20} />,
+      roles: ["super_admin"],
+    },
+    {
+      href: "/dashboard/user-suspension",
+      label: t("nav.userSuspension"),
+      icon: <UserX size={20} />,
+      roles: ["super_admin"],
+    },
+    {
       href: "/dashboard/orders",
-      label: "Commandes",
+      label: t("nav.orders"),
       icon: <List size={20} />,
       roles: ["admin", "super_admin"],
     },
     {
       href: "/dashboard/orders/history",
-      label: "Historique",
+      label: t("nav.history"),
       icon: <History size={20} />,
       roles: ["admin", "super_admin"],
     },
     {
+      href: "/dashboard/held-orders",
+      label: t("nav.heldOrders"),
+      icon: <ShieldAlert size={20} />,
+      roles: ["admin", "super_admin"],
+    },
+    {
       href: "/dashboard/drivers",
-      label: "Livreurs",
+      label: t("nav.drivers"),
       icon: <Users size={20} />,
       roles: ["admin", "super_admin"],
     },
     {
       href: "/dashboard/storelist",
-      label: "Partenaires",
+      label: t("nav.stores"),
       icon: <Home size={20} />,
       roles: ["admin", "super_admin"],
     },
     {
       href: "/dashboard/offers",
-      label: "Offres & Livraisons",
+      label: t("nav.offers"),
       icon: <Percent size={20} />,
       roles: ["admin", "super_admin"],
     },
     {
       href: "/dashboard/contacts",
-      label: "Service & Clients",
+      label: t("nav.contacts"),
       icon: <Phone size={20} />,
       roles: ["super_admin"],
     },
     {
       href: "/dashboard/featured",
-      label: "Sélectionnés (Featured)",
+      label: t("nav.featured"),
       icon: <Sparkles size={20} />,
       roles: ["super_admin"],
     },
     {
       href: "/dashboard/notifications",
-      label: "Notifications",
+      label: t("nav.notifications"),
       icon: <Bell size={20} />,
       roles: ["super_admin"],
     },
     {
       href: "/dashboard/admins",
-      label: "Admins",
+      label: t("nav.admins"),
       icon: <ShieldCheck size={20} />,
       roles: ["super_admin"],
     },
     {
       href: "/dashboard/promo",
-      label: "Codes promo",
+      label: t("nav.promo"),
       icon: <TicketPercent size={20} />,
       roles: ["super_admin"],
     },
     {
       href: "/dashboard/tags",
-      label: "Tags",
+      label: t("nav.tags"),
       icon: <Tag size={20} />,
       roles: ["super_admin"],
     },
     {
       href: "/dashboard/courses",
-      label: "Cours",
+      label: t("nav.courses"),
       icon: <GraduationCap size={20} />,
       roles: ["super_admin"],
     },
     {
       href: "/dashboard/grocery-collections",
-      label: "قوائم Grocery",
+      label: t("nav.grocery"),
       icon: <ShoppingBasket size={20} />,
       roles: ["super_admin"],
     },
     {
       href: "/dashboard/banners",
-      label: "banners",
+      label: t("nav.banners"),
       icon: <ShoppingBasket size={20} />,
       roles: ["super_admin"],
     },
     {
       href: "/dashboard/home-ads",
-      label: "إعلانات الرئيسية",
+      label: t("nav.homeAds"),
       icon: <Megaphone size={20} />,
       roles: ["super_admin"],
     },
     {
       href: "/dashboard/cashback",
-      label: "الكاش باك",
-      icon: <PiggyBank size={20} />,
+      label: t("nav.cashback"),
+      icon: <HandCoins size={20} />,
       roles: ["super_admin"],
     },
     {
       href: "/dashboard/store-owners",
-      label: "ديون نقاط الشحن",
+      label: t("nav.storeOwners"),
       icon: <Landmark size={20} />,
       roles: ["super_admin"],
     },
     {
       href: "/dashboard/referral",
-      label: "نظام الدعوة",
+      label: t("nav.referral"),
       icon: <Gift size={20} />,
+      roles: ["super_admin"],
+    },
+    {
+      href: "/dashboard/driver-bonus",
+      label: t("nav.driverBonus"),
+      icon: <Zap size={20} />,
+      roles: ["super_admin"],
+    },
+    {
+      href: "/dashboard/driver-rewards",
+      label: t("nav.driverRewards"),
+      icon: <Trophy size={20} />,
+      roles: ["super_admin"],
+    },
+    {
+      href: "/dashboard/store-radius",
+      label: t("nav.storeRadius"),
+      icon: <Radar size={20} />,
       roles: ["super_admin"],
     },
 
     // ===== صاحب المتجر (store_owner) =====
     {
       href: "/dashboard/store-owner/recharge",
-      label: "Recharger livreurs",
+      label: t("nav.recharge"),
       icon: <Wallet size={20} />,
       roles: ["store_owner"],
     },
     {
       href: "/dashboard/store-owner/cashout",
-      label: "Retrait livreurs",
+      label: t("nav.cashout"),
       icon: <Banknote size={20} />,
       roles: ["store_owner"],
     },
     {
       href: "/dashboard/store-owner/history",
-      label: "Mon historique",
+      label: t("nav.myHistory"),
       icon: <History size={20} />,
       roles: ["store_owner"],
     },
@@ -308,7 +358,7 @@ export default function AppBar() {
                 <div className="flex items-center gap-2">
                   <CreditCard size={14} className="text-red-200" />
                   <span className="text-[11px] font-medium text-red-100">
-                    Solde
+                    {t("nav.balance")}
                   </span>
                 </div>
                 <div className="text-right">
@@ -333,7 +383,7 @@ export default function AppBar() {
         {/* Navigation */}
         <nav className="flex-1 px-3 mt-2 space-y-1 overflow-y-auto">
           <p className="px-4 text-[10px] font-bold text-red-200/50 uppercase tracking-[0.2em] mb-3">
-            Menu Dashboard
+            {t("nav.menu")}
           </p>
           {links.map((link) => {
             const isActive = pathname === link.href;
@@ -373,7 +423,7 @@ export default function AppBar() {
             className="flex items-center justify-center gap-3 w-full px-4 py-3 text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all font-bold text-sm active:scale-95"
           >
             <LogOut size={18} />
-            <span>Déconnexion</span>
+            <span>{t("nav.logout")}</span>
           </button>
         </div>
       </aside>

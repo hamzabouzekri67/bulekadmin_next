@@ -28,13 +28,19 @@ export type User = {
   balance: number;
   currency: string;
   autoAccepted:boolean
+  email?: string | null;
+  emailVerified?: boolean;
+  /** إعدادات الإشعارات (حسابي) */
+  notificationPrefs?: Record<string, boolean>;
+  /** لغة اللوحة */
+  uiLang?: "ar" | "fr";
 };
 
 type UserContextType = {
   user: User | null;
   setUser: (user: User | null) => void;
   loading: boolean;
-  refreshUser: () => Promise<void>;
+  refreshUser: (silent?: boolean) => Promise<void>;
   logout: () => Promise<void>; // إضافة دالة logout للنوع
 };
 
@@ -49,9 +55,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const refreshUser = async () => {
+  /** silent: فحص دوري في الخلفية (بلا شاشة تحميل، ولا يمسح المستخدم عند انقطاع الشبكة) */
+  const refreshUser = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const url = `${API_URL}${LOGIN_CHECK}`;
       const { value: token } = await Preferences.get({ key: "token" });
       const tokenFcm = await getFcmToken();
@@ -88,23 +95,26 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
         console.log(data);
         if (!data.status) {
-        //  localStorage.removeItem("token");
-         // router.replace("/login");
+          // حساب موقوف أو توكن ملغى (تغيير كلمة السر / الإيقاف) → خروج فوري
+          if (data.code === "ACCOUNT_SUSPENDED" || data.message === "Invalid Token" || data.message === "Unauthorized") {
+            await Preferences.remove({ key: "token" });
+            window.location.href = "/login";
+          }
           setUser(null);
 
           return;
         }
         setUser(data.result);
       } else {
-        setUser(null);
+        if (!silent) setUser(null);
        // localStorage.removeItem("token");
        // router.replace("/login");
         //  window.location.href = "/login";
       }
     } catch (err) {
       console.log(err);
-      
-      setUser(null);
+
+      if (!silent) setUser(null);
     } finally {
       setLoading(false);
     }
@@ -130,6 +140,12 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     refreshUser();
+    // إعادة الفحص كل دقيقتين: الأدمين الموقوف يُطرد حتى لو بقيت الصفحة مفتوحة
+    const t = setInterval(async () => {
+      const { value } = await Preferences.get({ key: "token" });
+      if (value) refreshUser(true);
+    }, 120_000);
+    return () => clearInterval(t);
   }, []);
 
   return (
